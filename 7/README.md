@@ -1,6 +1,10 @@
 # Scheduling: Introduction
 
-## Questions
+## Homework (Simulation)
+
+This program, `scheduler.py`, allows you to see how different sched- ulers perform under scheduling metrics such as response time, turnaround time, and total wait time. See the README for details.
+
+### Questions
 
 1. Compute the response time and turnaround time when running three jobs of length 200 with the SJF and FIFO schedulers.
 
