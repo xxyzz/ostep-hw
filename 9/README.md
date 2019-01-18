@@ -176,3 +176,70 @@ This program, `lottery.py`, allows you to see how a lottery scheduler works. See
     1/100
 
     Not fair for the lower tickets jobs.
+
+3. When running with two jobs of length 100 and equal ticket allocations of 100 (`-l 100:100,100:100`), how unfair is the scheduler? Run with some different random seeds to determine the (probabilistic) answer; let unfairness be determined by how much earlier one job finishes than the other.
+
+    ```
+    $ ./lottery.py -s 0 -l 100:100,100:100 -c
+    U = 192/200 = 0.96
+
+    $ ./lottery.py -s 1 -l 100:100,100:100 -c
+    U = 192/200 = 0.96
+
+    $ ./lottery.py -s 2 -l 100:100,100:100 -c
+    U = 190/200 = 0.95
+
+    $ ./lottery.py -s 3 -l 100:100,100:100 -c
+    U = 196/200 = 0.98
+    ```
+
+4. How does your answer to the previous question change as the quantum size (`-q`) gets larger?
+
+    ```
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 1 -c
+    U = 192/200 = 0.96
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 5 -c
+    U = 160/200 = 0.8
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 10 -c
+    U = 150/200 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 15 -c
+    U = 135/210 = 0.64
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 20 -c
+    U = 140/200 = 0.7
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 30 -c
+    U = 180/240 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 40 -c
+    U = 160/240 = 0.67
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 50 -c
+    U = 150/200 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 60 -c
+    U = 180/240 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 70 -c
+    U = 210/280 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 80 -c
+    U = 240/320 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 90 -c
+    U = 270/360 = 0.75
+
+    $ ./lottery.py -s 0 -l 100:100,100:100 -q 100 -c
+    U = 100/200 = 0.5
+    ```
+
+    Lesser quantum size is fairer.
+
+5. Can you make a version of the graph that is found in the chapter? What else would be worth exploring? How would the graph look with a stride scheduler?
+
+    ```
+    $ ./plot.py
+    ```
