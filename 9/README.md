@@ -243,3 +243,5 @@ This program, `lottery.py`, allows you to see how a lottery scheduler works. See
     ```
     $ ./plot.py
     ```
+
+    ![Figure 9.2: Lottery Fairness Study](./9.2.png)

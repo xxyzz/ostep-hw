@@ -4,27 +4,25 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 
-tickTotal = 0
-runTotal = 0
-jobList = []
-quantum = 1
 uList = [0] * 1000
-jobs = 2
 
 for i in range(30):
     random.seed(i)
 
     for jobLength in range(1, 1001):
+        tickTotal = 200
         runTotal = 2 * jobLength
-        jobs = 2
         jobList = []
+        jobs = 2
+        quantum = 1
+        jobList = [[0, jobLength, 100], [1, jobLength, 100]]
         # create two jobs
-        for j in range(jobs): 
-            tickets = 0
-            while tickets == 0:
-                tickets = int(100 * random.random())
-            tickTotal += tickets
-            jobList.append([j, jobLength, tickets])
+        # for j in range(jobs): 
+        #     tickets = 0
+        #     while tickets == 0:
+        #         tickets = int(100 * random.random())
+        #     tickTotal += tickets
+        #     jobList.append([j, jobLength, tickets])
     
         clock = 0
         finishTime = []
