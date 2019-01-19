@@ -4,17 +4,16 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 
-uList = [0] * 1000
+uList = [0] * 100
 
 for i in range(30):
     random.seed(i)
 
-    for jobLength in range(1, 1001):
+    for quantum in range(1, 101):
         tickTotal = 200
-        runTotal = 2 * jobLength
+        runTotal = 200
         jobs = 2
-        quantum = 1
-        jobList = [[0, jobLength, 100], [1, jobLength, 100]]
+        jobList = [[0, 100, 100], [1, 100, 100]]
     
         clock = 0
         finishTime = []
@@ -53,14 +52,14 @@ for i in range(30):
                 break
         
         u = round(finishTime[0] / finishTime[1], 2)
-        uList[jobLength - 1] += u
+        uList[quantum - 1] += u
 
 fig = plt.figure()
-x = np.linspace(1, 1000, 1000)
+x = np.linspace(1, 100, 100)
 plt.plot(x, [u / 30 for u in uList], color='orange')
 plt.ylim(0, 1)
 plt.margins(0)
-plt.xlabel('Job Length')
+plt.xlabel('Quantum Size')
 plt.ylabel('Unfairness (Average)')
-plt.title('Figure 9.2: Lottery Fairness Study')
+plt.title('Lottery Fairness Study')
 plt.show()

@@ -195,48 +195,13 @@ This program, `lottery.py`, allows you to see how a lottery scheduler works. See
 
 4. How does your answer to the previous question change as the quantum size (`-q`) gets larger?
 
-    ```
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 1 -c
-    U = 192/200 = 0.96
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 5 -c
-    U = 160/200 = 0.8
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 10 -c
-    U = 150/200 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 15 -c
-    U = 135/210 = 0.64
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 20 -c
-    U = 140/200 = 0.7
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 30 -c
-    U = 180/240 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 40 -c
-    U = 160/240 = 0.67
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 50 -c
-    U = 150/200 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 60 -c
-    U = 180/240 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 70 -c
-    U = 210/280 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 80 -c
-    U = 240/320 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 90 -c
-    U = 270/360 = 0.75
-
-    $ ./lottery.py -s 0 -l 100:100,100:100 -q 100 -c
-    U = 100/200 = 0.5
-    ```
-
     Lesser quantum size is fairer.
+
+    ```
+    $ ./plot_quantum.py
+    ```
+
+    ![Change quantum size](./quantum.png)
 
 5. Can you make a version of the graph that is found in the chapter? What else would be worth exploring? How would the graph look with a stride scheduler?
 
@@ -245,3 +210,11 @@ This program, `lottery.py`, allows you to see how a lottery scheduler works. See
     ```
 
     ![Figure 9.2: Lottery Fairness Study](./9.2.png)
+
+    Check turnaround time.
+
+    ```
+    $ ./plot_stride.py
+    ```
+
+    ![Stride Scheduling](./stride.png)

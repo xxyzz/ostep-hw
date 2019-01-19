@@ -10,28 +10,25 @@ for i in range(30):
     random.seed(i)
 
     for jobLength in range(1, 1001):
-        tickTotal = 200
         runTotal = 2 * jobLength
         jobs = 2
         quantum = 1
-        jobList = [[0, jobLength, 100], [1, jobLength, 100]]
-    
+        jobList = [[0, jobLength, 0], [1, jobLength, 0]]
         clock = 0
         finishTime = []
+        r = int(random.random() * 1000001)
+        stride = int(r % 100)
         # run jobs
         for k in range(runTotal):
-            r = int(random.random() * 1000001)
-            winner = int(r % tickTotal)
-        
-            current = 0
             wjob = 0
             wrun = 0
-            wtix = 0
-            for (job, runtime, tickets) in jobList:
-                current += tickets
-                if current > winner and runtime > 0:
-                    (wjob, wrun, wtix) = (job, runtime, tickets)
-                    break
+            wpass = 0
+            if (jobList[0][2] <= jobList[1][2]):
+                # run job 0
+                (wjob, wrun, wpass) = jobList[0]
+            else:
+                # run job 1
+                (wjob, wrun, wpass) = jobList[1]
 
             # now do the accounting
             if wrun >= quantum:
@@ -39,13 +36,13 @@ for i in range(30):
             else:
                 wrun = 0
 
-            jobList[wjob] = (wjob, wrun, wtix)
+            wpass += stride
+            jobList[wjob] = (wjob, wrun, wpass)
 
             clock += quantum
 
             # job completed!
             if wrun == 0:
-                tickTotal -= wtix
                 jobs -= 1
                 finishTime.append(clock)
 
@@ -62,5 +59,5 @@ plt.ylim(0, 1)
 plt.margins(0)
 plt.xlabel('Job Length')
 plt.ylabel('Unfairness (Average)')
-plt.title('Figure 9.2: Lottery Fairness Study')
+plt.title('Stride Scheduling')
 plt.show()
