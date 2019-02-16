@@ -2,7 +2,7 @@
 
 ## Homework (Simulation)
 
-This program, `scheduler.py`, allows you to see how different sched- ulers perform under scheduling metrics such as response time, turnaround time, and total wait time. See the README for details.
+This program, `scheduler.py`, allows you to see how different schedulers perform under scheduling metrics such as response time, turnaround time, and total wait time. See the README for details.
 
 ### Questions
 

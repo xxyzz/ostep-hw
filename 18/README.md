@@ -51,3 +51,36 @@ In this homework, you will use a simple program, which is known as `paging-linea
     ```
 
     Which of these parameter combinations are unrealistic? Why?
+
+    The first is too small and the third is too big.
+
+4. Use the program to try out some other problems. Can you find the limits of where the program doesn’t work anymore? For example, what happens if the address-space size is bigger than physical memory?
+
+    ```
+    $ ./paging-linear-translate.py -a 65k -v -c
+    ARG address space size 65k
+    ARG phys mem size 64k
+    Error: physical memory size must be GREATER than address space size (for this simulation)
+
+    $ ./paging-linear-translate.py -a 0 -v -c
+    ARG address space size 0
+    Error: must specify a non-zero address-space size.
+
+    $  ./paging-linear-translate.py -p 0 -v -c
+    ARG phys mem size 0
+    Error: must specify a non-zero physical memory size.
+
+    $ ./paging-linear-translate.py -P 0 -v -c
+    Traceback (most recent call last):
+    File "./paging-linear-translate.py", line 85, in <module>
+        mustbemultipleof(asize, pagesize, 'address space must be a multiple of the pagesize')
+    File "./paging-linear-translate.py", line 14, in mustbemultipleof
+        if (int(float(bignum)/float(num)) != (int(bignum) / int(num))):
+    ZeroDivisionError: float division by zero
+
+    $ ./paging-linear-translate.py -P 32k -v -c
+    Traceback (most recent call last):
+    File "./paging-linear-translate.py", line 174, in <module>
+        if pt[vpn] < 0:
+    IndexError: array index out of range
+    ```
