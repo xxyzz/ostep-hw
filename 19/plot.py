@@ -10,7 +10,7 @@ parser.add_argument("trials", help="set iteration number")
 args = parser.parse_args()
 
 if not os.path.isfile("./tlb.out"):
-    subprocess.run(["gcc", "-o", "tlb.out", "tlb.c", "-Wall"])
+    subprocess.run(["gcc", "-O0", "-o", "tlb.out", "tlb.c", "-Wall"])
 
 y = []
 a = np.arange(11)

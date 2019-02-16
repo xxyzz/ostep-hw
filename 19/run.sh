@@ -4,7 +4,7 @@ if [ "$1" == "" ]; then
     exit 1
 fi
 if [ ! -f ./tlb.out ]; then
-    gcc -o tlb.out tlb.c -Wall
+    gcc -O0 -o tlb.out tlb.c -Wall
 fi
 for (( i = 1; i <= 1024; i *= 2 ))
 do
