@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/time.h>
 
 int main(int argc, char *argv[]) {
-    int PAGESIZE = 4;
+    int PAGESIZE = getpagesize();
     int jump = PAGESIZE / sizeof(int);
     if (argc != 3) {
         printf("Need the number of pages and the number of trials\n");
@@ -17,14 +18,19 @@ int main(int argc, char *argv[]) {
     }
     int a[NUMPAGES * jump];
     struct timeval start, end;
-    gettimeofday(&start, NULL);
+    int startReturn = gettimeofday(&start, NULL);
     for(size_t j = 0; j < count; j++) {
         for (int i = 0; i < NUMPAGES * jump; i += jump) {
             a[i] += 1; 
         }
     }
-    gettimeofday(&end, NULL);
-    int nloops = count * NUMPAGES * jump;
+    int endReturn = gettimeofday(&end, NULL);
+    if (startReturn == -1 || endReturn == -1) {
+        printf("Gettimeofday() error");
+        exit(1);
+    }
+
+    int nloops = count * NUMPAGES;
     // nanoseconds
     printf("%f\n", (float) (end.tv_sec * 1000000 + end.tv_usec - start.tv_sec * 1000000 - start.tv_usec) * 1000 / nloops);
     return 0;
