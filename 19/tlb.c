@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
     }
     gettimeofday(&end, NULL);
     int nloops = count * NUMPAGES * jump;
-    printf("The cost of accessing each page: %f microseconds\n", (float) (end.tv_sec * 1000000 + end.tv_usec - start.tv_sec * 1000000 - start.tv_usec) / nloops);
+    // nanoseconds
+    printf("%f\n", (float) (end.tv_sec * 1000000 + end.tv_usec - start.tv_sec * 1000000 - start.tv_usec) * 1000 / nloops);
     return 0;
 }
