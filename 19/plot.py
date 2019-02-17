@@ -13,7 +13,7 @@ if not os.path.isfile("./tlb.out"):
     subprocess.run(["gcc", "-O0", "-o", "tlb.out", "tlb.c", "-Wall"])
 
 y = []
-a = np.arange(11)
+a = np.arange(14)
 x = 2**a
 for i in x:
     result = subprocess.run(["./tlb.out", str(i), args.trials], stdout=subprocess.PIPE)
