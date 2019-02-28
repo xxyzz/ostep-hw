@@ -10,10 +10,10 @@ plt.plot(x, y, marker='o', color='orange')
 plt.margins(0)
 plt.xlabel('Size of memory(1000 MB)')
 plt.ylabel('Average bandwidth(MB/s)')
-plt.savefig('bandwidth.png')
+plt.savefig('bandwidth.png', dpi=227)
 plt.clf()
 
-x1 = np.arange(0, 11,  2)
+x1 = np.arange(0, 11, 2)
 y1 = [1680.19, 6032.19, 6795.72, 6763.85, 6808.33, 6484.74]
 
 x2 = np.arange(11)
@@ -35,4 +35,4 @@ plt.legend(['1024MB', '2048MB', '3072MB', '4096MB', '5120MB', '6144MB', '7168MB'
 plt.margins(0)
 plt.xlabel('Loops')
 plt.ylabel('Bandwidth(MB/s)')
-plt.savefig('loops.png')
+plt.savefig('loops.png', dpi=227)

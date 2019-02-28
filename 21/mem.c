@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
                     time_since_last_print = 0;
                 }
 
-                if (loop_count >= 9) {
+                if (loop_count > 9) {
                     break;
                 } else {
                     k = 0;
