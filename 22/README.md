@@ -111,3 +111,14 @@ This simulator, `paging-policy.py`, allows you to play around with different pag
 5. Use a program like `valgrind` to instrument a real application and generate a virtual page reference stream. For example, running `valgrind --tool=lackey --trace-mem=yes ls` will output a nearly-complete reference trace of every instruction and data reference made by the program `ls`. To make this useful for the simulator above, you’ll have to first transform each virtual memory reference into a virtual page-number reference (done by masking off the offset and shifting the resulting bits downward). How big of a cache is needed for your application trace in order to satisfy a large fraction of requests? Plot a graph of its working set as the size of the cache increases.
 
     [Specific Details about --trace-mem=yes](https://sourceware.org/git/?p=valgrind.git;a=blob;f=lackey/lk_main.c;h=1bcd8ed566edc0fdf68c2efcb797753a4fd8bb39;hb=HEAD#l55)
+
+    ```
+    $ valgrind --tool=lackey --trace-mem=yes ls &> ls-trace.txt
+    // Count to 3, ^C
+
+    $ ./transform.py    // transform to VPN
+    $ ./run.sh          // get some data
+    $ ./plot.py
+    ```
+
+    ![workload](./workload.png)
