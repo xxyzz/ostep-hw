@@ -63,3 +63,34 @@ This program, `x86.py`, allows you to see how different thread interleavings eit
     ```
     $ ./x86.py -p peterson.s -M count,flag,turn -R ax,cx -a bx=0,bx=1 -c -P 0000011111
     ```
+
+11. Now study the code for the ticket lock in `ticket.s`. Does it match the code in the chapter? Then run with the following flags: `-a bx=1000,bx=1000` (causing each thread to loop through the critical section 1000 times). Watch what happens; do the threads spend much time spin-waiting for the lock?
+
+    Yes.
+
+    ```
+    $ ./x86.py -p ticket.s -M count,ticket,turn -R ax,bx,cx -a bx=1000,bx=1000 -c
+    ```
+
+    Count is correct. Yes.
+
+12. How does the code behave as you add more threads?
+
+    ```
+    $ ./x86.py -p ticket.s -M count -t 10 -c -i 5
+    ```
+
+    spin in tryagain loop
+
+13. Now examine `yield.s`, in which a yield instruction enables one thread to yield control of the CPU (realistically, this would be an OS primitive, but for the simplicity, we assume an instruction does the task). Find a scenario where `test-and-set.s` wastes cycles spinning, but `yield.s` does not. How many instructions are saved? In what scenarios do these savings arise?
+
+    ```
+    $ ./x86.py -p test-and-set.s -M count,mutex -R ax,bx -a bx=5,bx=5 -c -i 7
+    $ ./x86.py -p yield.s -M count,mutex -R ax,bx -a bx=5,bx=5 -c -i 7
+    ```
+
+    Saved one instruction each cycle. When the thread doesn't have the mutex.
+
+14. Finally, examine `test-and-test-and-set.s`. What does this lock do? What kind of savings does it introduce as compared to `test-and-set.s`?
+
+    Change mutex to 1 only if lock is free. That will avoid unnecessary writing.
