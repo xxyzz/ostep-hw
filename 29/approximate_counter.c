@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
-// #include <unistd.h>
-// long NUMCPUS = sysconf(_SC_NPROCESSORS_ONLN);
-#define NUMCPUS 4
+#define NUMCPUS 8
 
 typedef struct __counter_t {
     int             global;            // global count
@@ -27,10 +25,18 @@ void init(counter_t *c, int threshold) {
     c->global = 0;
     pthread_mutex_init(&c->glock, NULL);
     int i;
-    for(size_t i = 0; i < NUMCPUS; i++) {
+    for(i = 0; i < NUMCPUS; i++) {
         c->local[i] = 0;
         pthread_mutex_init(&c->llock[i], NULL);
     }
+}
+
+// get: just return global amount (which may not be perfect)
+int get(counter_t *c) {
+    pthread_mutex_lock(&c->glock);
+    int val = c->global;
+    pthread_mutex_unlock(&c->glock);
+    return val; // only approximate!
 }
 
 // update: usually, just grab local lock and update local amount
@@ -46,24 +52,18 @@ void update(counter_t *c, int threadID, int amt) {
         pthread_mutex_unlock(&c->glock);
         c->local[cpu] = 0;
     }
+    printf("Thread %d local count: %d, gobal count: %d\n", cpu, c->local[cpu], get(c));
     pthread_mutex_unlock(&c->llock[cpu]);
-}
-
-// get: just return global amount (which may not be perfect)
-int get(counter_t *c) {
-    pthread_mutex_lock(&c->glock);
-    int val = c->global;
-    pthread_mutex_unlock(&c->glock);
-    return val; // only approximate!
 }
 
 void *thread_function(void *arg) {
     myarg_t *m = (myarg_t *) arg;
     pthread_t threadID = pthread_self();
-    for(size_t i = 0; i < 6; i++) {
+    int i;
+    for(i = 0; i < 6; i++) {
         update(m->c, (int) threadID, m->amt);
     }
-    return NULL;
+    pthread_exit(0);
 }
 
 int main(int argc, char *argv[]) {
@@ -84,6 +84,5 @@ int main(int argc, char *argv[]) {
     pthread_join(p2, NULL);
     pthread_join(p3, NULL);
     pthread_join(p4, NULL);
-    printf("Global count: %d\n", get(c));
     return 0;
 }
