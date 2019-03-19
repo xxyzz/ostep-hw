@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
-#define NUMCPUS 8
+#define NUMTHREADS 4
+int threads[NUMTHREADS];
 
 typedef struct __counter_t {
     int             global;            // global count
     pthread_mutex_t glock;             // global lock
-    int             local[NUMCPUS];    // local count (per CPU)
-    pthread_mutex_t llock[NUMCPUS];    // ... and locks
+    int             local[NUMTHREADS];    // local count (per CPU)
+    pthread_mutex_t llock[NUMTHREADS];    // ... and locks
     int             threshold;         // update frequency
 } counter_t;
 
@@ -25,7 +26,7 @@ void init(counter_t *c, int threshold) {
     c->global = 0;
     pthread_mutex_init(&c->glock, NULL);
     int i;
-    for(i = 0; i < NUMCPUS; i++) {
+    for(i = 0; i < NUMTHREADS; i++) {
         c->local[i] = 0;
         pthread_mutex_init(&c->llock[i], NULL);
     }
@@ -43,17 +44,29 @@ int get(counter_t *c) {
 //         once local count has risen by ’threshold’, grab global
 //         lock and transfer local values to it
 void update(counter_t *c, int threadID, int amt) {
-    int cpu = threadID % NUMCPUS;
-    pthread_mutex_lock(&c->llock[cpu]);
-    c->local[cpu] += amt;                  // assumes amt > 0
-    if (c->local[cpu] >= c->threshold) {   // transfer to global
-        pthread_mutex_lock(&c->glock);
-        c->global += c->local[cpu];
-        pthread_mutex_unlock(&c->glock);
-        c->local[cpu] = 0;
+    int thread = 0;
+    for(int i = 0; i < NUMTHREADS; i++) {
+        if (threads[i] == threadID) {
+            thread = i;
+            break;
+        }
+        if (threads[i] == 0) {
+            threads[i] = threadID;
+            thread = i;
+            break;
+        }
     }
-    printf("Thread %d local count: %d, gobal count: %d\n", cpu, c->local[cpu], get(c));
-    pthread_mutex_unlock(&c->llock[cpu]);
+
+    pthread_mutex_lock(&c->llock[thread]);
+    c->local[thread] += amt;                  // assumes amt > 0
+    if (c->local[thread] >= c->threshold) {   // transfer to global
+        pthread_mutex_lock(&c->glock);
+        c->global += c->local[thread];
+        pthread_mutex_unlock(&c->glock);
+        c->local[thread] = 0;
+    }
+    printf("Thread %d local count: %d, gobal count: %d\n", thread, c->local[thread], get(c));
+    pthread_mutex_unlock(&c->llock[thread]);
 }
 
 void *thread_function(void *arg) {
