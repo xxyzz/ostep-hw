@@ -14,4 +14,84 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
 2. Now, build a simple concurrent counter and measure how long it takes to increment the counter many times as the number of threads increases. How many CPUs are available on the system you are using? Does this number impact your measurements at all?
 
-    8 CPUs.
+    4 physical CPUs, 8 logical CPUs. More CPUs should be faster, but in this case it's not!
+
+    ```
+    // check CPU numbers
+    $ cat /proc/cpuinfo
+    $ sysctl hw.physicalcpu
+    ```
+
+    Or
+
+    ```c
+    #include <stdio.h>
+    #include <unistd.h>
+
+    int main(int argc, char *argv[]) {
+        // logical CPUs
+        printf("Number of logical CPUs: %ld", sysconf(_SC_NPROCESSORS_ONLN));
+        return 0;
+    }
+    ```
+
+    Here are my results. The time of one thread is close to the book(0.03 seconds), but the results of more threads from the book are all exceed five seconds. Maybe I was wrong or the book was wrong.
+
+    ```
+    $ make && ./simple_counter.out
+    // laptop, no limit on CPUs
+    Counter value: 1000000
+    Time (seconds): 0.019944
+
+    Counter value: 2000000
+    Time (seconds): 0.109112
+
+    Counter value: 3000000
+    Time (seconds): 0.164640
+
+    Counter value: 4000000
+    Time (seconds): 0.229332
+    ```
+
+    ```
+    // Runs on Raspberry Pi 3 Model B Rev 1.2
+    // CPU: ARMv7 rev 4 (v7l) (4) @ 1.2GHz
+    // one CPU
+    Counter value: 1000000
+    Time (seconds): 0.168540
+
+    Counter value: 2000000
+    Time (seconds): 0.234996
+
+    Counter value: 3000000
+    Time (seconds): 0.353402
+
+    Counter value: 4000000
+    Time (seconds): 0.470331
+
+    // two CPUs
+    Counter value: 1000000
+    Time (seconds): 0.160590
+
+    Counter value: 2000000
+    Time (seconds): 0.526839
+
+    Counter value: 3000000
+    Time (seconds): 0.793229
+
+    Counter value: 4000000
+    Time (seconds): 0.997977
+
+    // four CPUs
+    Counter value: 1000000
+    Time (seconds): 0.150495
+
+    Counter value: 2000000
+    Time (seconds): 0.519921
+
+    Counter value: 3000000
+    Time (seconds): 0.649873
+
+    Counter value: 4000000
+    Time (seconds): 0.854063
+    ```

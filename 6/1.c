@@ -41,7 +41,7 @@ main(int argc, char *argv[]) {
         perror("fork");
         exit(EXIT_FAILURE);
     } else if (cpid == 0) {    // child
-        if (sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
+        if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &set) == -1) {
             exit(EXIT_FAILURE);
         }
 
@@ -50,7 +50,7 @@ main(int argc, char *argv[]) {
             write(second_pipefd[1], NULL, 0);
         }
     } else {           // parent
-        if (sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
+        if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &set) == -1) {
             exit(EXIT_FAILURE);
         }
 

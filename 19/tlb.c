@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     CPU_ZERO(&set);
     CPU_SET(0, &set);
 
-    if (sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
+    if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &set) == -1) {
         printf("Set CPU affinity error\n");
         exit(1);
     }
