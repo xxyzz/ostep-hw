@@ -55,32 +55,34 @@ void *thread_function(void *arg) {
 int main(int argc, char *argv[]) {
     cpu_set_t set;
     CPU_ZERO(&set);
-    // CPU_SET(0, &set);
-    for (int i = 0; i < 4; i++) {
-        CPU_SET(i % 2, &set);
-    }
     for (int i = 1; i < 5; i++) {
-        pthread_t threads[i];
-        struct timeval start, end;
-        counter_t *counter = malloc(sizeof(counter_t));
-        if (counter == NULL) {
-            return -1;
-        }
-        init(counter);
-        myarg_t args;
-        args.counter = counter;
-        args.set = set;
-        gettimeofday(&start, NULL);
-        for(int j = 0; j < i; j++) {
-            pthread_create(&threads[j], NULL, &thread_function, &args);
+        for(int m = 0; m < i; m++) {
+            CPU_SET(m, &set);
         }   
-        for(int k = 0; k < i; k++) {
-            pthread_join(threads[k], NULL);
+        printf("%d CPUs\n", i);
+        for (int l = 1; l < 5; l++) {
+            pthread_t threads[l - 1];
+            struct timeval start, end;
+            counter_t *counter = malloc(sizeof(counter_t));
+            if (counter == NULL) {
+                return -1;
+            }
+            init(counter);
+            myarg_t args;
+            args.counter = counter;
+            args.set = set;
+            gettimeofday(&start, NULL);
+            for(int j = 0; j < l; j++) {
+                pthread_create(&threads[j], NULL, &thread_function, &args);
+            }   
+            for(int k = 0; k < l; k++) {
+                pthread_join(threads[k], NULL);
+            }
+            gettimeofday(&end, NULL);
+            printf("%d threads\n", get(counter) / ONE_MILLION);
+            printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
+            free(counter);
         }
-        gettimeofday(&end, NULL);
-        printf("Counter value: %d\n", get(counter));
-        printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
-        free(counter);
     }
     return 0;
 }

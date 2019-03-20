@@ -39,59 +39,56 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     ```
     $ make && ./simple_counter.out
-    // laptop, no limit on CPUs
-    Counter value: 1000000
-    Time (seconds): 0.019944
+    // Runs on four Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz CPUs
+    1 CPUS
+    1 threads
+    Time (seconds): 0.022267
 
-    Counter value: 2000000
-    Time (seconds): 0.109112
+    2 threads
+    Time (seconds): 0.044044
 
-    Counter value: 3000000
-    Time (seconds): 0.164640
+    3 threads
+    Time (seconds): 0.066165
 
-    Counter value: 4000000
-    Time (seconds): 0.229332
-    ```
+    4 threads
+    Time (seconds): 0.080288
 
-    ```
-    // Runs on Raspberry Pi 3 Model B Rev 1.2
-    // CPU: ARMv7 rev 4 (v7l) (4) @ 1.2GHz
-    // one CPU
-    Counter value: 1000000
-    Time (seconds): 0.168540
+    2 CPUS
+    1 threads
+    Time (seconds): 0.024309
 
-    Counter value: 2000000
-    Time (seconds): 0.234996
+    2 threads
+    Time (seconds): 0.317053
 
-    Counter value: 3000000
-    Time (seconds): 0.353402
+    3 threads
+    Time (seconds): 0.451622
 
-    Counter value: 4000000
-    Time (seconds): 0.470331
+    4 threads
+    Time (seconds): 0.721061
 
-    // two CPUs
-    Counter value: 1000000
-    Time (seconds): 0.160590
+    3 CPUS
+    1 threads
+    Time (seconds): 0.025448
 
-    Counter value: 2000000
-    Time (seconds): 0.526839
+    2 threads
+    Time (seconds): 0.261361
 
-    Counter value: 3000000
-    Time (seconds): 0.793229
+    3 threads
+    Time (seconds): 0.288686
 
-    Counter value: 4000000
-    Time (seconds): 0.997977
+    4 threads
+    Time (seconds): 0.370454
 
-    // four CPUs
-    Counter value: 1000000
-    Time (seconds): 0.150495
+    4 CPUS
+    1 threads
+    Time (seconds): 0.024341
 
-    Counter value: 2000000
-    Time (seconds): 0.519921
+    2 threads
+    Time (seconds): 0.243560
 
-    Counter value: 3000000
-    Time (seconds): 0.649873
+    3 threads
+    Time (seconds): 0.258055
 
-    Counter value: 4000000
-    Time (seconds): 0.854063
+    4 threads
+    Time (seconds): 0.422996
     ```
