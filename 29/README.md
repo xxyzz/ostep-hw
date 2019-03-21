@@ -92,3 +92,70 @@ In this homework, you’ll gain some experience with writing concurrent code and
     4 threads
     Time (seconds): 0.422996
     ```
+
+3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
+
+    The time of one threshold in the book is more then ten seconds. But the trend is match.
+
+    ```
+    $ make && ./sloppy_counter_counter.out
+    1 threads, 1 threshold
+    Time (seconds): 0.043183
+
+    2 threads, 1 threshold
+    Time (seconds): 0.221763
+
+    3 threads, 1 threshold
+    Time (seconds): 0.323453
+
+    4 threads, 1 threshold
+    Time (seconds): 0.464092
+
+    1 threads, 2 threshold
+    Time (seconds): 0.030793
+
+    2 threads, 2 threshold
+    Time (seconds): 0.136044
+
+    3 threads, 2 threshold
+    Time (seconds): 0.215075
+
+    4 threads, 2 threshold
+    Time (seconds): 0.336686
+
+    0 threads, 3 threshold
+    Time (seconds): 0.028138
+
+    1 threads, 3 threshold
+    Time (seconds): 0.166224
+
+    2 threads, 3 threshold
+    Time (seconds): 0.178742
+
+    3 threads, 3 threshold
+    Time (seconds): 0.280512
+
+    1 threads, 4 threshold
+    Time (seconds): 0.026591
+
+    2 threads, 4 threshold
+    Time (seconds): 0.123020
+
+    3 threads, 4 threshold
+    Time (seconds): 0.164652
+
+    4 threads, 4 threshold
+    Time (seconds): 0.253098
+
+    1 threads, 5 threshold
+    Time (seconds): 0.025639
+
+    2 threads, 5 threshold
+    Time (seconds): 0.112037
+
+    3 threads, 5 threshold
+    Time (seconds): 0.144308
+
+    4 threads, 5 threshold
+    Time (seconds): 0.267464
+    ```

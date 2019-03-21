@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #define NUMTHREADS 4
-int threads[NUMTHREADS];
+#define ONE_MILLION 1000000
+int threadsID[NUMTHREADS];
 
 typedef struct __counter_t {
     int             global;            // global count
@@ -46,12 +48,12 @@ int get(counter_t *c) {
 void update(counter_t *c, int threadID, int amt) {
     int thread = 0;
     for(int i = 0; i < NUMTHREADS; i++) {
-        if (threads[i] == threadID) {
+        if (threadsID[i] == threadID) {
             thread = i;
             break;
         }
-        if (threads[i] == 0) {
-            threads[i] = threadID;
+        if (threadsID[i] == 0) {
+            threadsID[i] = threadID;
             thread = i;
             break;
         }
@@ -65,7 +67,6 @@ void update(counter_t *c, int threadID, int amt) {
         pthread_mutex_unlock(&c->glock);
         c->local[thread] = 0;
     }
-    printf("Thread %d local count: %d, gobal count: %d\n", thread, c->local[thread], get(c));
     pthread_mutex_unlock(&c->llock[thread]);
 }
 
@@ -73,29 +74,37 @@ void *thread_function(void *arg) {
     myarg_t *m = (myarg_t *) arg;
     pthread_t threadID = pthread_self();
     int i;
-    for(i = 0; i < 6; i++) {
+    for(i = 0; i < ONE_MILLION; i++) {
         update(m->c, (int) threadID, m->amt);
     }
     pthread_exit(0);
 }
 
 int main(int argc, char *argv[]) {
-    int threshold = 5;
-    counter_t *c;
-    c = calloc(1, sizeof(counter_t));
-    init(c, threshold);
-    pthread_t p1, p2, p3, p4;
-    myarg_t args;
-    args.c = c;
-    args.threshold = threshold;
-    args.amt = 1;
-    pthread_create(&p1, NULL, &thread_function, &args);
-    pthread_create(&p2, NULL, &thread_function, &args);
-    pthread_create(&p3, NULL, &thread_function, &args);
-    pthread_create(&p4, NULL, &thread_function, &args);
-    pthread_join(p1, NULL);
-    pthread_join(p2, NULL);
-    pthread_join(p3, NULL);
-    pthread_join(p4, NULL);
+    for (int i = 1; i < 6; i++) {
+        int threshold = i;
+        for (int j = 1; j <= NUMTHREADS; j++) {
+            counter_t *c;
+            c = calloc(1, sizeof(counter_t));
+            init(c, threshold);
+            pthread_t threads[j];
+            myarg_t args;
+            args.c = c;
+            args.threshold = threshold;
+            args.amt = 1;
+            struct timeval start, end;
+            gettimeofday(&start, NULL);
+            for (int k = 0; k < j; k++) {
+                pthread_create(&threads[k], NULL, &thread_function, &args);
+            }
+            for (int l = 0; l < j; l++) {
+                pthread_join(threads[l], NULL);
+            }
+            gettimeofday(&end, NULL);
+            printf("%d threads, %d threshold\n", get(c) / ONE_MILLION, threshold);
+            printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
+            free(c);
+        }
+    }
     return 0;
 }
