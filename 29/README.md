@@ -99,6 +99,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     ```
     $ make && ./sloppy_counter_counter.out
+    // Runs on four Intel(R) Core(TM) i5-8259U CPU @ 2.30GHz CPUs
     1 threads, 1 threshold
     Time (seconds): 0.043183
 
@@ -159,3 +160,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
     4 threads, 5 threshold
     Time (seconds): 0.267464
     ```
+
+4. Build a version of a linked list that uses hand-over-hand locking[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf), as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?
+
+    

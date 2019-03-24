@@ -72,5 +72,6 @@ int main(int argc, char *argv[]) {
     Queue_Enqueue(q, 3);
     Queue_Dequeue(q);
     Queue_Print(q);
+    free(q);
     return 0;
 }
