@@ -56,12 +56,22 @@ int List_Lookup(list_t *L, int key) {
     return rv; // now both success and failure
 }
 
+void List_Print(list_t *L) {
+    pthread_mutex_lock(&L->lock);
+    node_t *curr = L->head;
+    while (curr) {
+        printf("%d\n", curr->key);
+        curr = curr->next;
+    }
+    pthread_mutex_unlock(&L->lock);
+}
+
 void *thread_function(void *args) {
     myarg_t *m = (myarg_t *) args;
-    for(int i = 0; i < ONE_MILLION / 200; i++) {
+    for(int i = 0; i < ONE_MILLION / 500; i++) {
         List_Insert(m->L, i);
     }
-    for(int j = 0; j < ONE_MILLION / 200; j++) {
+    for(int j = 0; j < ONE_MILLION / 500; j++) {
         List_Lookup(m->L, 1);
     }
     pthread_exit(0);
