@@ -6,6 +6,7 @@
 // max children per B-tree node = M-1
 // (must be even and greater than 2)
 #define M 4
+#define ONE_MILLION 1000000
 
 // internal nodes: only use key and next
 // external nodes: only use key and value
@@ -25,7 +26,13 @@ typedef struct __btree_t {
     node_t *root;     // root of the B-tree
     int    height;    // height of the B-tree
     int    n;         // number of key-value pairs in the B-tree  
+    pthread_mutex_t lock;
 } btree_t;
+
+typedef struct __myarg_t {
+    btree_t *btree;
+    int threads;
+} myarg_t;
 
 entry_t *initEntry(char *key, char *val, node_t *next) {
     entry_t *new = malloc(sizeof(entry_t));
@@ -49,6 +56,7 @@ btree_t *initBtree() {
     new->height = 0;
     new->n = 0;
     new->root = initNode(0);
+    pthread_mutex_init(&new->lock, NULL);
     return new;
 }
 
@@ -138,7 +146,7 @@ node_t *insert(node_t *h, char *key, char *val, int ht) {
     }
 
     for (int i = h->m; i > j; i--)
-            h->children[i] = h->children[i-1];
+        h->children[i] = h->children[i-1];
     h->children[j] = t;
     h->m++;
     if (h->m < M)
@@ -193,37 +201,65 @@ char *toStringHelper(node_t *h, int ht, char *indent) {
     return s;
 }
 
+void *thread_function(void *args) {
+    myarg_t *m = (myarg_t *) args;
+    pthread_mutex_lock(&m->btree->lock);
+    for(size_t i = 0; i < 100 / m->threads; i++) {
+        put(m->btree, "www.cs.princeton.edu", "128.112.136.12");
+    }
+    pthread_mutex_unlock(&m->btree->lock);
+    pthread_exit(0);
+}
+
 // Unit tests the BTree data type.
 int main(int argc, char *argv[]) {
-    btree_t *btree = initBtree();
+    for(int i = 1; i < 11; i++) {
+        btree_t *btree = initBtree();
+        myarg_t args;
+        args.btree = btree;
+        args.threads = i;
+        pthread_t threads[i];
+        struct timeval start, end;
+        gettimeofday(&start, NULL);
+        for(int j = 0; j < i; j++) {
+            pthread_create(&threads[j], NULL, &thread_function, &args);
+        }
+        for(int k = 0; k < i; k++) {
+            pthread_join(threads[k], NULL);
+        }
+        gettimeofday(&end, NULL);
+        printf("%d threads, time (seconds): %f\n", i,
+            (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
+        printf("size: %d\n\n", btree->n);
+    }
 
-    put(btree, "www.cs.princeton.edu", "128.112.136.12");
-    put(btree, "www.cs.princeton.edu", "128.112.136.11");
-    put(btree, "www.princeton.edu",    "128.112.128.15");
-    put(btree, "www.yale.edu",         "130.132.143.21");
-    put(btree, "www.simpsons.com",     "209.052.165.60");
-    put(btree, "www.apple.com",        "17.112.152.32");
-    put(btree, "www.amazon.com",       "207.171.182.16");
-    put(btree, "www.ebay.com",         "66.135.192.87");
-    put(btree, "www.cnn.com",          "64.236.16.20");
-    put(btree, "www.google.com",       "216.239.41.99");
-    put(btree, "www.nytimes.com",      "199.239.136.200");
-    put(btree, "www.microsoft.com",    "207.126.99.140");
-    put(btree, "www.dell.com",         "143.166.224.230");
-    put(btree, "www.slashdot.org",     "66.35.250.151");
-    put(btree, "www.espn.com",         "199.181.135.201");
-    put(btree, "www.weather.com",      "63.111.66.11");
-    put(btree, "www.yahoo.com",        "216.109.118.65");
+    // put(btree, "www.cs.princeton.edu", "128.112.136.12");
+    // put(btree, "www.cs.princeton.edu", "128.112.136.11");
+    // put(btree, "www.princeton.edu",    "128.112.128.15");
+    // put(btree, "www.yale.edu",         "130.132.143.21");
+    // put(btree, "www.simpsons.com",     "209.052.165.60");
+    // put(btree, "www.apple.com",        "17.112.152.32");
+    // put(btree, "www.amazon.com",       "207.171.182.16");
+    // put(btree, "www.ebay.com",         "66.135.192.87");
+    // put(btree, "www.cnn.com",          "64.236.16.20");
+    // put(btree, "www.google.com",       "216.239.41.99");
+    // put(btree, "www.nytimes.com",      "199.239.136.200");
+    // put(btree, "www.microsoft.com",    "207.126.99.140");
+    // put(btree, "www.dell.com",         "143.166.224.230");
+    // put(btree, "www.slashdot.org",     "66.35.250.151");
+    // put(btree, "www.espn.com",         "199.181.135.201");
+    // put(btree, "www.weather.com",      "63.111.66.11");
+    // put(btree, "www.yahoo.com",        "216.109.118.65");
 
-    printf("cs.princeton.edu:  %s\n", get(btree, "www.cs.princeton.edu"));
-    printf("hardvardsucks.com: %s\n", get(btree, "www.harvardsucks.com"));    // lol
-    printf("simpsons.com:      %s\n", get(btree, "www.simpsons.com"));
-    printf("apple.com:         %s\n", get(btree, "www.apple.com"));
-    printf("ebay.com:          %s\n", get(btree, "www.ebay.com"));
-    printf("dell.com:          %s\n", get(btree, "www.dell.com"));
+    // printf("cs.princeton.edu:  %s\n", get(btree, "www.cs.princeton.edu"));
+    // printf("hardvardsucks.com: %s\n", get(btree, "www.harvardsucks.com"));    // lol
+    // printf("simpsons.com:      %s\n", get(btree, "www.simpsons.com"));
+    // printf("apple.com:         %s\n", get(btree, "www.apple.com"));
+    // printf("ebay.com:          %s\n", get(btree, "www.ebay.com"));
+    // printf("dell.com:          %s\n", get(btree, "www.dell.com"));
 
-    printf("size:      %d\n", btree->n);
-    printf("height:    %d\n", btree->height);
-    printf("%s\n", toString(btree));
+    // printf("size:      %d\n", btree->n);
+    // printf("height:    %d\n", btree->height);
+    // printf("%s\n", toString(btree));
     return 0;
 }
