@@ -180,7 +180,11 @@ char *toStringHelper(node_t *h, int ht, char *indent) {
             strcat(s, indent);
             strcat(s, children[j]->key);
             strcat(s, " ");
-            strcat(s, children[j]->val);
+            if (children[j]->val == NULL) {
+                strcat(s, "null");
+            } else {
+                strcat(s, children[j]->val);
+            }
             strcat(s, "\n");
         }
     }
@@ -235,6 +239,7 @@ int main(int argc, char *argv[]) {
 
     // put(btree, "www.cs.princeton.edu", "128.112.136.12");
     // put(btree, "www.cs.princeton.edu", "128.112.136.11");
+    // put(btree, "www.cs.princeton.edu", NULL);
     // put(btree, "www.princeton.edu",    "128.112.128.15");
     // put(btree, "www.yale.edu",         "130.132.143.21");
     // put(btree, "www.simpsons.com",     "209.052.165.60");
