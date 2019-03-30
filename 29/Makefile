@@ -1,4 +1,4 @@
-all: counter queue simple_counter standard_list hand_over_hand
+all: counter queue simple_counter standard_list hand_over_hand btree
 
 counter: approximate_counter.c
 	gcc -o sloppy_counter.out approximate_counter.c -Wall -pthread
@@ -14,3 +14,6 @@ standard_list: concurrent-linked-list.c
 
 hand_over_hand: hand-over-hand-locking-list.c
 	gcc -o hand_over_hand.out hand-over-hand-locking-list.c -Wall -pthread
+
+btree: btree.c
+	gcc -o btree.out btree.c -Wall -pthread

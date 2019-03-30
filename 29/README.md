@@ -163,4 +163,6 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
 4. Build a version of a linked list that uses hand-over-hand locking[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf), as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?
 
-    
+5. Pick your favorite interesting data structure, such as a B-tree or other slightly more interested structure. Implement it, and start with a simple locking strategy such as a single lock. Measure its performance as the number of concurrent threads increases.
+
+    Translate from [algs4 BTree](https://github.com/kevin-wayne/algs4/blob/master/src/main/java/edu/princeton/cs/algs4/BTree.java)
