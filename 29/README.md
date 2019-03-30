@@ -49,7 +49,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     3 threads 
     Time (seconds): 0.022126
-    
+
     4 threads
     Time (seconds): 0.021776
 
@@ -166,3 +166,36 @@ In this homework, you’ll gain some experience with writing concurrent code and
 5. Pick your favorite interesting data structure, such as a B-tree or other slightly more interested structure. Implement it, and start with a simple locking strategy such as a single lock. Measure its performance as the number of concurrent threads increases.
 
     Translate from [algs4 BTree](https://github.com/kevin-wayne/algs4/blob/master/src/main/java/edu/princeton/cs/algs4/BTree.java)
+
+    ```
+    $ make && ./btree.out
+    1 threads, time (seconds): 0.000223
+    size: 100
+
+    2 threads, time (seconds): 0.000202
+    size: 100
+
+    3 threads, time (seconds): 0.000234
+    size: 99
+
+    4 threads, time (seconds): 0.000251
+    size: 100
+
+    5 threads, time (seconds): 0.000242
+    size: 100
+
+    6 threads, time (seconds): 0.000317
+    size: 96
+
+    7 threads, time (seconds): 0.000294
+    size: 98
+
+    8 threads, time (seconds): 0.000320
+    size: 96
+
+    9 threads, time (seconds): 0.000295
+    size: 99
+
+    10 threads, time (seconds): 0.000342
+    size: 100
+    ```

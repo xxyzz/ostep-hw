@@ -207,9 +207,22 @@ char *toStringHelper(node_t *h, int ht, char *indent) {
 
 void *thread_function(void *args) {
     myarg_t *m = (myarg_t *) args;
+    char *urls[] = {
+        "www.cs.princeton.edu",
+        "www.princeton.edu",
+        "www.yale.edu",
+        "www.simpsons.com",
+        "www.apple.com",
+        "www.amazon.com",
+        "www.ebay.com",
+        "www.cnn.com",
+        "www.google.com",
+        "www.nytimes.com",
+        "www.microsoft.com"
+    };
     pthread_mutex_lock(&m->btree->lock);
     for(size_t i = 0; i < 100 / m->threads; i++) {
-        put(m->btree, "www.cs.princeton.edu", "128.112.136.12");
+        put(m->btree, urls[i % 11], "128.112.136.12");
     }
     pthread_mutex_unlock(&m->btree->lock);
     pthread_exit(0);
