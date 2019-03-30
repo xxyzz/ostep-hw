@@ -14,6 +14,7 @@ typedef struct __counter_t {
 typedef struct __myarg_t {
     counter_t *counter;
     cpu_set_t set;
+    int       threads;
 } myarg_t;
 
 void init(counter_t *c) {
@@ -46,7 +47,7 @@ void *thread_function(void *arg) {
         printf("Set CPU affinity error\n");
         pthread_exit(0);
     }
-    for (int i = 0; i < ONE_MILLION; i++) {
+    for (int i = 0; i < ONE_MILLION / m->threads; i++) {
         increment(m->counter);
     }
     pthread_exit(0);
@@ -71,6 +72,7 @@ int main(int argc, char *argv[]) {
             myarg_t args;
             args.counter = counter;
             args.set = set;
+            args.threads = l;
             gettimeofday(&start, NULL);
             for(int j = 0; j < l; j++) {
                 pthread_create(&threads[j], NULL, &thread_function, &args);
@@ -79,7 +81,7 @@ int main(int argc, char *argv[]) {
                 pthread_join(threads[k], NULL);
             }
             gettimeofday(&end, NULL);
-            printf("%d threads\n", get(counter) / ONE_MILLION);
+            printf("%d threads\n", l);
             printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
             free(counter);
         }

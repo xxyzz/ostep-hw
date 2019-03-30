@@ -40,57 +40,57 @@ In this homework, you’ll gain some experience with writing concurrent code and
     ```
     $ make && ./simple_counter.out
     // Runs on four Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz CPUs
-    1 CPUS
+    1 CPUs                                 
     1 threads
-    Time (seconds): 0.022267
+    Time (seconds): 0.022937
 
     2 threads
-    Time (seconds): 0.044044
+    Time (seconds): 0.024302
 
-    3 threads
-    Time (seconds): 0.066165
-
+    3 threads 
+    Time (seconds): 0.022126
+    
     4 threads
-    Time (seconds): 0.080288
+    Time (seconds): 0.021776
 
-    2 CPUS
+    2 CPUs
     1 threads
-    Time (seconds): 0.024309
+    Time (seconds): 0.021761
 
     2 threads
-    Time (seconds): 0.317053
+    Time (seconds): 0.131118
 
     3 threads
-    Time (seconds): 0.451622
+    Time (seconds): 0.103083
 
     4 threads
-    Time (seconds): 0.721061
+    Time (seconds): 0.138586
 
-    3 CPUS
+    3 CPUs
     1 threads
-    Time (seconds): 0.025448
+    Time (seconds): 0.023613
 
     2 threads
-    Time (seconds): 0.261361
+    Time (seconds): 0.112032
 
     3 threads
-    Time (seconds): 0.288686
+    Time (seconds): 0.100858
 
     4 threads
-    Time (seconds): 0.370454
+    Time (seconds): 0.097561
 
-    4 CPUS
+    4 CPUs
     1 threads
-    Time (seconds): 0.024341
+    Time (seconds): 0.021350
 
     2 threads
-    Time (seconds): 0.243560
+    Time (seconds): 0.132612
 
     3 threads
-    Time (seconds): 0.258055
+    Time (seconds): 0.091974
 
     4 threads
-    Time (seconds): 0.422996
+    Time (seconds): 0.091199
     ```
 
 3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
@@ -98,67 +98,67 @@ In this homework, you’ll gain some experience with writing concurrent code and
     The time of one threshold in the book is more then ten seconds. But the trend is match.
 
     ```
-    $ make && ./sloppy_counter_counter.out
+    $ make && ./sloppy_counter.out
     // Runs on four Intel(R) Core(TM) i5-8259U CPU @ 2.30GHz CPUs
     1 threads, 1 threshold
-    Time (seconds): 0.043183
+    Time (seconds): 0.047187
 
     2 threads, 1 threshold
-    Time (seconds): 0.221763
+    Time (seconds): 0.122691
 
     3 threads, 1 threshold
-    Time (seconds): 0.323453
+    Time (seconds): 0.113234
 
     4 threads, 1 threshold
-    Time (seconds): 0.464092
+    Time (seconds): 0.119592
 
     1 threads, 2 threshold
-    Time (seconds): 0.030793
+    Time (seconds): 0.032644
 
     2 threads, 2 threshold
-    Time (seconds): 0.136044
+    Time (seconds): 0.092127
 
     3 threads, 2 threshold
-    Time (seconds): 0.215075
+    Time (seconds): 0.075995
 
     4 threads, 2 threshold
-    Time (seconds): 0.336686
-
-    0 threads, 3 threshold
-    Time (seconds): 0.028138
+    Time (seconds): 0.090719
 
     1 threads, 3 threshold
-    Time (seconds): 0.166224
+    Time (seconds): 0.031007
 
     2 threads, 3 threshold
-    Time (seconds): 0.178742
+    Time (seconds): 0.081507
 
     3 threads, 3 threshold
-    Time (seconds): 0.280512
+    Time (seconds): 0.061782
+
+    4 threads, 3 threshold
+    Time (seconds): 0.077193
 
     1 threads, 4 threshold
-    Time (seconds): 0.026591
+    Time (seconds): 0.029097
 
     2 threads, 4 threshold
-    Time (seconds): 0.123020
+    Time (seconds): 0.067766
 
     3 threads, 4 threshold
-    Time (seconds): 0.164652
+    Time (seconds): 0.057847
 
     4 threads, 4 threshold
-    Time (seconds): 0.253098
+    Time (seconds): 0.068740
 
     1 threads, 5 threshold
-    Time (seconds): 0.025639
+    Time (seconds): 0.028153
 
     2 threads, 5 threshold
-    Time (seconds): 0.112037
+    Time (seconds): 0.063899
 
     3 threads, 5 threshold
-    Time (seconds): 0.144308
+    Time (seconds): 0.052178
 
     4 threads, 5 threshold
-    Time (seconds): 0.267464
+    Time (seconds): 0.065875
     ```
 
 4. Build a version of a linked list that uses hand-over-hand locking[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf), as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?

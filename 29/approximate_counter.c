@@ -18,6 +18,7 @@ typedef struct __myarg_t {
     counter_t *c;
     int       threshold;
     int       amt;
+    int       threads;
 } myarg_t;
 
 
@@ -74,7 +75,7 @@ void *thread_function(void *arg) {
     myarg_t *m = (myarg_t *) arg;
     pthread_t threadID = pthread_self();
     int i;
-    for(i = 0; i < ONE_MILLION; i++) {
+    for(i = 0; i < ONE_MILLION / m->threads; i++) {
         update(m->c, (int) threadID, m->amt);
     }
     pthread_exit(0);
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
             args.c = c;
             args.threshold = threshold;
             args.amt = 1;
+            args.threads = j;
             struct timeval start, end;
             gettimeofday(&start, NULL);
             for (int k = 0; k < j; k++) {
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
                 pthread_join(threads[l], NULL);
             }
             gettimeofday(&end, NULL);
-            printf("%d threads, %d threshold\n", get(c) / ONE_MILLION, threshold);
+            printf("%d threads, %d threshold\n", j, threshold);
             printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
             free(c);
         }
