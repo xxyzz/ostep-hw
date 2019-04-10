@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "common_threads.h"
+
+// If done correctly, each child should print their "before" message
+// before either prints their "after" message. Test by adding sleep(1)
+// calls in various locations.
+
+// You likely need two semaphores to do this correctly, and some
+// other integers to track things.
+
+typedef struct __barrier_t {
+    // add semaphores and other information here
+    sem_t * modCounter;
+    sem_t * allArried;
+    int num_arried;
+    int num_threads;
+} barrier_t;
+
+// the single barrier we are using for this program
+barrier_t b;
+char * modCounter = "/modCounter";
+char * allArried = "/allArried";
+
+void barrier_init(barrier_t *b, int num_threads) {
+    // initialization code goes here
+    b->modCounter = Sem_open(modCounter, 1);
+    b->allArried = Sem_open(allArried, 0);
+    b->num_arried = 0;
+    b->num_threads = num_threads;
+}
+
+void barrier(barrier_t *b) {
+    // barrier code goes here
+    Sem_wait(b->modCounter);
+    b->num_arried++;
+    if (b->num_arried == b->num_threads) {
+        Sem_post(b->allArried);
+    }
+    Sem_post(b->modCounter);
+    Sem_wait(b->allArried);
+    Sem_post(b->allArried);
+}
+
+//
+// XXX: don't change below here (just run it!)
+//
+typedef struct __tinfo_t {
+    int thread_id;
+} tinfo_t;
+
+void *child(void *arg) {
+    tinfo_t *t = (tinfo_t *) arg;
+    printf("child %d: before\n", t->thread_id);
+    barrier(&b);
+    printf("child %d: after\n", t->thread_id);
+    return NULL;
+}
+
+// run with a single argument indicating the number of 
+// threads you wish to create (1 or more)
+int main(int argc, char *argv[]) {
+    assert(argc == 2);
+    int num_threads = atoi(argv[1]);
+    assert(num_threads > 0);
+
+    pthread_t p[num_threads];
+    tinfo_t t[num_threads];
+
+    printf("parent: begin\n");
+    barrier_init(&b, num_threads);
+    
+    int i;
+    for (i = 0; i < num_threads; i++) {
+	    t[i].thread_id = i;
+	    Pthread_create(&p[i], NULL, child, &t[i]);
+    }
+
+    for (i = 0; i < num_threads; i++) 
+	    Pthread_join(p[i], NULL);
+
+    printf("parent: end\n");
+    Sem_close(b.modCounter);
+    Sem_close(b.allArried);
+    Sem_unlink(modCounter);
+    Sem_unlink(allArried);
+    return 0;
+}

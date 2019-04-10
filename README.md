@@ -2,6 +2,14 @@
 
 [Operating Systems: Three Easy Pieces](http://pages.cs.wisc.edu/~remzi/OSTEP) homeworks
 
+## Requirements
+
+- Linux/Unix
+
+- Python 2: run simulations from the book
+
+- [Anaconda Python 3](https://www.anaconda.com/distribution/#download-section): plot
+
 ## Chapters
 
 ### Virtualization
