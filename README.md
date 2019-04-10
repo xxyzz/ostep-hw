@@ -20,9 +20,9 @@
 
 10. Multiprocessor Scheduling (Advanced)
 
-11. Summary Dialogue on CPU Virtualization
+11. ~~Summary Dialogue on CPU Virtualization~~
 
-12. A Dialogue on Memory Virtualization
+12. ~~A Dialogue on Memory Virtualization~~
 
 13. [The Abstraction: Address Spaces](./13)
 
@@ -53,3 +53,7 @@
 28. [Locks](./28)
 
 29. [Lock-based Concurrent Data Structures](./29)
+
+30. [Condition Variables](./30)
+
+31. [Semaphores](./31)
