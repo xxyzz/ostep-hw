@@ -27,5 +27,5 @@ plt.xticks(a, x) # evenly spaced
 plt.xlabel('Number Of Pages')
 plt.ylabel('Time Per Access (ns)')
 plt.title('TLB Size Measurement')
-plt.savefig('tlb.png')
+plt.savefig('tlb.png', dpi=227)
 plt.show()
