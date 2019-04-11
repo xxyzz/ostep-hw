@@ -1,4 +1,4 @@
-all: fork-join rendezvous barrier reader-writer
+all: fork-join rendezvous barrier reader-writer reader-writer-nostarve
 
 fork-join: fork-join.c common_threads.h
 	gcc -o fork-join.out fork-join.c -Wall -pthread
@@ -11,3 +11,6 @@ barrier: barrier.c common_threads.h
 
 reader-writer: reader-writer.c common_threads.h
 	gcc -o reader-writer.out reader-writer.c -Wall -pthread
+
+reader-writer-nostarve: reader-writer-nostarve.c common_threads.h
+	gcc -o reader-writer-nostarve.out reader-writer-nostarve.c -Wall -pthread

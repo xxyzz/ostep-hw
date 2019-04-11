@@ -9,10 +9,12 @@
 
 char * lockString      = "/lock";
 char * writelockString = "/writelock";
+char * readlockString  = "/readlock";
 
 typedef struct __rwlock_t {
     sem_t * lock;         // binary semaphore (basic lock)
     sem_t * writelock;    // used to allow ONE writer or MANY readers
+    sem_t * readlock;     // used to block readers if there is a waiting writer
     int     readers;      // count of readers reading in critical section
 } rwlock_t;
 
@@ -20,9 +22,12 @@ void rwlock_init(rwlock_t *rw) {
     rw->readers   = 0;
     rw->lock      = Sem_open(lockString, 1);
     rw->writelock = Sem_open(writelockString, 1);
+    rw->readlock  = Sem_open(readlockString, 1);
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
+    Sem_wait(rw->readlock);
+    Sem_post(rw->readlock);
     Sem_wait(rw->lock);
     rw->readers++;
     if (rw->readers == 1)
@@ -39,11 +44,13 @@ void rwlock_release_readlock(rwlock_t *rw) {
 }
 
 void rwlock_acquire_writelock(rwlock_t *rw) {
+    Sem_wait(rw->readlock);         // block other readers
     Sem_wait(rw->writelock);
 }
 
 void rwlock_release_writelock(rwlock_t *rw) {
     Sem_post(rw->writelock);
+    Sem_post(rw->readlock);
 }
 
 //
@@ -103,8 +110,10 @@ int main(int argc, char *argv[]) {
     printf("end: value %d\n", value);
     Sem_close(lock.lock);
     Sem_close(lock.writelock);
+    Sem_close(lock.readlock);
     Sem_unlink(lockString);
-    Sem_unlink(writelockString)
+    Sem_unlink(writelockString);
+    Sem_unlink(readlockString);
 
     return 0;
 }

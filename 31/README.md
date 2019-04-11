@@ -21,3 +21,14 @@ Each of the following questions provides a code skeleton; your job is to fill in
     *The Little Book of Semaphore* chapter 3.6
 
 4. Now let’s solve the **reader-writer problem**, also as described in the text. In this first take, don’t worry about starvation. See the code in `reader-writer.c` for details. Add `sleep()` calls to your code to demonstrate it works as you expect. Can you show the existence of the starvation problem?
+
+    >1. Any number of readers can be in the >critical section simultaneously.
+    >2. Writers must have exclusive access to the critical section.
+    >
+    >In other words, a writer cannot enter the critical section while any other thread (reader or writer) is there, and while the writer is there, no other thread may enter.
+    >
+    >--<cite>The Little Book of Semaphore chapter 4.2</cite>
+
+5. Let’s look at the reader-writer problem again, but this time, worry about starvation. How can you ensure that all readers and writers eventually make progress? See `reader-writer-nostarve.c` for details.
+
+6. Use semaphores to build a no-starve mutex, in which any thread that tries to acquire the mutex will eventually obtain it. See the code in `mutex-nostarve.c` for more information.
