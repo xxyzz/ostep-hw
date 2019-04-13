@@ -6,6 +6,8 @@
 
 - Linux/Unix
 
+- [GCC](https://gcc.gnu.org/), [GDB](https://www.gnu.org/software/gdb/)/[LLDB](https://lldb.llvm.org/), [Valgrind](http://valgrind.org/)
+
 - Python 2: run simulations from the book
 
 - [Anaconda Python 3](https://www.anaconda.com/distribution/#download-section): plot
@@ -65,3 +67,5 @@
 30. [Condition Variables](./30)
 
 31. [Semaphores](./31)
+
+32. [Common Concurrency Problems](./32)

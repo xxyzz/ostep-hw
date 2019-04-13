@@ -1,3 +1,6 @@
+// Translated from algs4 BTree.java
+// https://github.com/kevin-wayne/algs4/blob/master/src/main/java/edu/princeton/cs/algs4/BTree.java
+
 #include <stdio.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -5,7 +8,7 @@
 #include <string.h>
 // max children per B-tree node = M-1
 // (must be even and greater than 2)
-#define M 4
+#define M           4
 #define ONE_MILLION 1000000
 
 // internal nodes: only use key and next
@@ -60,10 +63,10 @@ btree_t *initBtree() {
     return new;
 }
 
-char * search(node_t *x, char *key, int ht);
-node_t *insert(node_t *h, char *key, char *val, int ht);
-node_t *split(node_t *h);
-char *toStringHelper(node_t *h, int ht, char *indent);
+char   * search(node_t *x, char *key, int ht);
+node_t * insert(node_t *h, char *key, char *val, int ht);
+node_t * split(node_t *h);
+char   * toStringHelper(node_t *h, int ht, char *indent);
 
 // Returns the value associated with the given key.
 char * get(btree_t *btree, char *key) {
