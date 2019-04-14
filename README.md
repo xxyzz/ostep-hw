@@ -69,3 +69,5 @@
 31. [Semaphores](./31)
 
 32. [Common Concurrency Problems](./32)
+
+33. [Event-based Concurrency (Advanced)](./33)
