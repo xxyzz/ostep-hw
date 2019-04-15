@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>         // perror(), exit()
-#include <sys/types.h>      // for BSD, man 2 socket, see NOTES
+#include <sys/types.h>      // see NOTES in man 2 socket
 #include <sys/socket.h>     // socket(), connect(), send(), recv(), AF_INET, SOCK_STREAM
+#include <sys/select.h>
 #include <netinet/in.h>     // sockaddr_in, INADDR_ANY
-#include <string.h>         // memset()
-#include <arpa/inet.h>      // htonl(), htons(), inet_addr()
+#include <string.h>         // memset(), strlen()
+#include <arpa/inet.h>      // htons(), inet_addr()
 #include <unistd.h>         // close()
 
-#define BUFFSIZE 1024
-#define PORT     8080
+#define BUFFSIZE    1024
+#define PORT        8080
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
@@ -28,15 +29,16 @@ int main(int argc, char *argv[]) {
         handle_error("connect");
 
     char buff[BUFFSIZE];
-    memset(buff, 0, sizeof(buff));
+    memset(buff, 0, BUFFSIZE);
+    sleep(1);
     printf("Request time\n");
     if (send(sfd, "time", strlen("time"), 0) == -1)
         handle_error("send");
-    memset(buff, 0, sizeof(buff));
+    memset(buff, 0, BUFFSIZE);
     if (recv(sfd, buff, BUFFSIZE, 0) == -1)
         handle_error("recv");
     printf("From Server: %s\n", buff);
-    memset(buff, 0, sizeof(buff));
+    memset(buff, 0, BUFFSIZE);
     printf("Exit\n");
     if (send(sfd, "exit", strlen("exit"), 0) == -1)
         handle_error("send");

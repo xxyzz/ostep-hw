@@ -1,16 +1,17 @@
 #include <stdio.h>
-#include <stdlib.h>         // perror(), exit()
-#include <sys/types.h>      // for BSD, man 2 socket, see NOTES
-#include <sys/socket.h>     // socket(), bind(), listen(), accept(), send(), recv(), AF_INET, SOCK_STREAM
-#include <netinet/in.h>     // sockaddr_in, INADDR_ANY
-#include <string.h>         // memset(), strlen()
-#include <arpa/inet.h>      // htonl(), htons()
-#include <time.h>           // time(), localtime()
-#include <unistd.h>         // close()
+#include <stdlib.h>            // perror(), exit()
+#include <sys/types.h>         // see NOTES in man 2 socket
+#include <sys/socket.h>        // socket(), bind(), listen(), accept(), send(), recv(), AF_INET, SOCK_STREAM
+#include <sys/select.h>
+#include <netinet/in.h>        // sockaddr_in, INADDR_ANY
+#include <string.h>            // memset(), strlen(), strncmp()
+#include <arpa/inet.h>         // htonl(), htons()
+#include <time.h>              // time(), strftime(), localtime()
+#include <unistd.h>            // close()
 
-#define BUFFSIZE       1024
-#define PORT           8080
-#define LISTEN_BACKLOG 80   // maxium length of the pending connections queue
+#define BUFFSIZE          1024
+#define PORT              8080
+#define LISTEN_BACKLOG    80   // maxium length of the pending connections queue
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
@@ -34,27 +35,38 @@ int main(int argc, char *argv[]) {
         handle_error("listen");
 
     peer_addr_size = sizeof(struct sockaddr_in);
-    cfd = accept(sfd, (struct sockaddr *) &peer_addr, &peer_addr_size);
-    if (cfd == -1)
-        handle_error("accept");
 
     char buff[BUFFSIZE];
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(sfd, &rfds);
     while (1) {
-        memset(buff, 0, sizeof(buff));
-        if (recv(cfd, buff, BUFFSIZE, 0) == -1)
-            handle_error("recv");
-        if (strncmp("time", buff, strlen("time")) == 0) {
-            memset(buff, 0, sizeof(buff));
-            time_t now = time(NULL);
-            strftime(buff, BUFFSIZE, "%Y-%m-%d %H:%M:%S", localtime(&now));
-            printf("Send time %s\n", buff);
-            if (send(cfd, buff, sizeof(buff), 0) == -1)
-                handle_error("send");
-        }
+        int retval;
+        if ((retval = select(sfd + 1, &rfds, NULL, NULL, NULL)) == -1) {
+            handle_error("select");
+        } else if (retval) {
+            cfd = accept(sfd, (struct sockaddr *) &peer_addr, &peer_addr_size);
+            if (cfd == -1)
+                handle_error("accept");
 
-        if (strncmp("exit", buff, strlen("exit")) == 0) {
-            printf("Server exit\n");
-            break;
+            memset(buff, 0, BUFFSIZE);
+            if (recv(cfd, buff, BUFFSIZE, 0) == -1)
+                handle_error("recv");
+
+            if (strncmp("time", buff, strlen("time")) == 0) {
+                memset(buff, 0, BUFFSIZE);
+                time_t now = time(NULL);
+                strftime(buff, BUFFSIZE, "%Y-%m-%d %H:%M:%S", localtime(&now));
+                printf("Send time %s\n", buff);
+
+                if (send(cfd, buff, BUFFSIZE, 0) == -1)
+                    handle_error("send");
+            }
+
+            if (strncmp("exit", buff, strlen("exit")) == 0) {
+                printf("Server exit\n");
+                close(cfd);
+            }
         }
     }
 
