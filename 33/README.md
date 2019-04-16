@@ -12,3 +12,6 @@ In this (short) homework, you’ll gain some experience with event-based code an
 
 2. Now, add the `select()` interface. Build a main program that can accept multiple connections, and an event loop that checks which file descriptors have data on them, and then read and process those requests. Make sure to carefully test that you are using `select()` correctly.
 
+    ```
+    $ ./TCPClient.out 1 & ./TCPClient.out 2 & ./TCPClient.out 3 &
+    ```

@@ -38,13 +38,13 @@ int main(int argc, char *argv[]) {
 
     char buff[BUFFSIZE];
     fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(sfd, &rfds);
+    FD_ZERO(&rfds);        // clear set
+    FD_SET(sfd, &rfds);    // add file descriptor
     while (1) {
         int retval;
         if ((retval = select(sfd + 1, &rfds, NULL, NULL, NULL)) == -1) {
             handle_error("select");
-        } else if (retval) {
+        } else if (retval && FD_ISSET(sfd, &rfds)) {
             cfd = accept(sfd, (struct sockaddr *) &peer_addr, &peer_addr_size);
             if (cfd == -1)
                 handle_error("accept");

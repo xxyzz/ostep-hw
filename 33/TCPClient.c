@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>         // perror(), exit()
+#include <stdlib.h>         // perror(), exit(), atoi()
 #include <sys/types.h>      // see NOTES in man 2 socket
 #include <sys/socket.h>     // socket(), connect(), send(), recv(), AF_INET, SOCK_STREAM
 #include <sys/select.h>
@@ -14,6 +14,13 @@
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 int main(int argc, char *argv[]) {
+    int sleep_seconds;
+    if (argc != 2) {
+        printf("Usage: ./TCPClient sleep_seconds\n");
+        exit(EXIT_FAILURE);
+    } else {
+        sleep_seconds = atoi(argv[1]);
+    }
     int sfd;
     struct sockaddr_in server_addr;                         // man 7 ip
     sfd = socket(AF_INET, SOCK_STREAM, 0);                  // tcp socket
@@ -30,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     char buff[BUFFSIZE];
     memset(buff, 0, BUFFSIZE);
-    sleep(1);
+    sleep(sleep_seconds);
     printf("Request time\n");
     if (send(sfd, "time", strlen("time"), 0) == -1)
         handle_error("send");
