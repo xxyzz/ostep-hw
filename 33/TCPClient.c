@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>         // perror(), exit(), atoi()
 #include <sys/types.h>      // see NOTES in man 2 socket
-#include <sys/socket.h>     // socket(), connect(), send(), recv(), AF_INET, SOCK_STREAM
-#include <sys/select.h>
+#include <sys/socket.h>     // socket(), connect(), send(), recv(), AF_INET, SOCK_STREAMs
 #include <netinet/in.h>     // sockaddr_in, INADDR_ANY
 #include <string.h>         // memset(), strlen()
 #include <arpa/inet.h>      // htons(), inet_addr()
-#include <unistd.h>         // open(), read(), close()
+#include <unistd.h>         // read(), close()
+#include <fcntl.h>          // open()
 
 #define BUFFSIZE    1024
 #define PORT        8080
@@ -15,7 +15,7 @@
 
 int main(int argc, char *argv[]) {
     int sleep_seconds;
-    if (argc != 2) {
+    if (argc != 3) {
         printf("Usage: ./TCPClient.out sleep_seconds file_path\n");
         exit(EXIT_FAILURE);
     } else {
@@ -38,19 +38,23 @@ int main(int argc, char *argv[]) {
 
     char buff[BUFFSIZE];
     memset(buff, 0, BUFFSIZE);
-    printf("Request time\n");
-    if (send(sfd, "time", strlen("time"), 0) == -1)
+
+    int fd;
+    if ((fd = open(argv[2], O_RDONLY)) == -1)
+        handle_error("open");
+
+    if (read(fd, buff, BUFFSIZE) == -1)
+        handle_error("read");
+
+    printf("Send file contents: %s\n", buff);
+    if (send(sfd, buff, strlen(buff), 0) == -1)
         handle_error("send");
+    
+    close(fd);
     memset(buff, 0, BUFFSIZE);
     if (recv(sfd, buff, BUFFSIZE, 0) == -1)
         handle_error("recv");
-    printf("From Server: %s\n", buff);
-    memset(buff, 0, BUFFSIZE);
-    printf("Exit\n");
-    if (send(sfd, "exit", strlen("exit"), 0) == -1)
-        handle_error("send");
-
+    printf("From server: %s\n", buff);
     close(sfd);
-
     return 0;
 }

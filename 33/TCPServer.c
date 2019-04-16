@@ -7,7 +7,8 @@
 #include <string.h>            // memset(), strlen(), strncmp()
 #include <arpa/inet.h>         // htonl(), htons()
 #include <time.h>              // time(), strftime(), localtime()
-#include <unistd.h>            // open(), read(), close()
+#include <unistd.h>            // read(), close()
+#include <fcntl.h>             // open()
 
 #define BUFFSIZE          1024
 #define PORT              8080
@@ -58,21 +59,12 @@ int main(int argc, char *argv[]) {
                     if (recv(i, buff, BUFFSIZE, 0) == -1)
                         handle_error("recv");
 
-                    if (strncmp("time", buff, strlen("time")) == 0) {
-                        memset(buff, 0, BUFFSIZE);
-                        time_t now = time(NULL);
-                        strftime(buff, BUFFSIZE, "%Y-%m-%d %H:%M:%S", localtime(&now));
-                        printf("Send time %s\n", buff);
+                    printf("Send file contents %s\n", buff);
+                    if (send(i, buff, strlen(buff), 0) == -1)
+                        handle_error("send");
 
-                        if (send(i, buff, BUFFSIZE, 0) == -1)
-                            handle_error("send");
-                    }
-
-                    if (strncmp("exit", buff, strlen("exit")) == 0) {
-                        printf("Server exit\n");
-                        close(i);
-                        FD_CLR(i, &afds);
-                    }
+                    close(i);
+                    FD_CLR(i, &afds);
                 }
             }
         }
