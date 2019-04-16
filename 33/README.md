@@ -15,3 +15,7 @@ In this (short) homework, you’ll gain some experience with event-based code an
     ```
     $ ./TCPClient.out 1 & ./TCPClient.out 2 & ./TCPClient.out 3 &
     ```
+
+    [Server Example](https://www.gnu.org/software/libc/manual/html_node/Server-Example.html)
+
+3. Next, let’s make the requests a little more interesting, to mimic a simple web or file server. Each request should be to read the contents of a file (named in the request), and the server should respond by reading the file into a buffer, and then returning the contents to the client. Use the standard `open()`, `read()`, `close()` system calls to implement this feature. Be a little careful here: if you leave this running for a long time, someone may figure out how to use it to read all the files on your computer!

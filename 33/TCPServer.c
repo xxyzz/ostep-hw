@@ -7,7 +7,7 @@
 #include <string.h>            // memset(), strlen(), strncmp()
 #include <arpa/inet.h>         // htonl(), htons()
 #include <time.h>              // time(), strftime(), localtime()
-#include <unistd.h>            // close()
+#include <unistd.h>            // open(), read(), close()
 
 #define BUFFSIZE          1024
 #define PORT              8080
@@ -16,7 +16,7 @@
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 int main(int argc, char *argv[]) {
-    int sfd, cfd;
+    int sfd;
     struct sockaddr_in my_addr, peer_addr;              // man 7 ip
     socklen_t peer_addr_size;
     sfd = socket(AF_INET, SOCK_STREAM, 0);              // tcp socket
@@ -37,40 +37,45 @@ int main(int argc, char *argv[]) {
     peer_addr_size = sizeof(struct sockaddr_in);
 
     char buff[BUFFSIZE];
-    fd_set rfds;
-    FD_ZERO(&rfds);        // clear set
-    FD_SET(sfd, &rfds);    // add file descriptor
+    fd_set afds, rfds;     // active set, read set
+    FD_ZERO(&afds);        // clear set
+    FD_SET(sfd, &afds);    // add file descriptor
     while (1) {
-        int retval;
-        if ((retval = select(sfd + 1, &rfds, NULL, NULL, NULL)) == -1) {
+        rfds = afds;
+        if (select(FD_SETSIZE, &rfds, NULL, NULL, NULL) == -1)
             handle_error("select");
-        } else if (retval && FD_ISSET(sfd, &rfds)) {
-            cfd = accept(sfd, (struct sockaddr *) &peer_addr, &peer_addr_size);
-            if (cfd == -1)
-                handle_error("accept");
 
-            memset(buff, 0, BUFFSIZE);
-            if (recv(cfd, buff, BUFFSIZE, 0) == -1)
-                handle_error("recv");
+        for (int i = 0; i < FD_SETSIZE; i++) {
+            if (FD_ISSET(i, &rfds)) {
+                if (i == sfd) {
+                    int cfd;
+                    cfd = accept(sfd, (struct sockaddr *) &peer_addr, &peer_addr_size);
+                    if (cfd == -1)
+                        handle_error("accept");
+                    FD_SET(cfd, &afds);
+                } else {
+                    memset(buff, 0, BUFFSIZE);
+                    if (recv(i, buff, BUFFSIZE, 0) == -1)
+                        handle_error("recv");
 
-            if (strncmp("time", buff, strlen("time")) == 0) {
-                memset(buff, 0, BUFFSIZE);
-                time_t now = time(NULL);
-                strftime(buff, BUFFSIZE, "%Y-%m-%d %H:%M:%S", localtime(&now));
-                printf("Send time %s\n", buff);
+                    if (strncmp("time", buff, strlen("time")) == 0) {
+                        memset(buff, 0, BUFFSIZE);
+                        time_t now = time(NULL);
+                        strftime(buff, BUFFSIZE, "%Y-%m-%d %H:%M:%S", localtime(&now));
+                        printf("Send time %s\n", buff);
 
-                if (send(cfd, buff, BUFFSIZE, 0) == -1)
-                    handle_error("send");
-            }
+                        if (send(i, buff, BUFFSIZE, 0) == -1)
+                            handle_error("send");
+                    }
 
-            if (strncmp("exit", buff, strlen("exit")) == 0) {
-                printf("Server exit\n");
-                close(cfd);
+                    if (strncmp("exit", buff, strlen("exit")) == 0) {
+                        printf("Server exit\n");
+                        close(i);
+                        FD_CLR(i, &afds);
+                    }
+                }
             }
         }
     }
-
-    close(sfd);
-
     return 0;
 }

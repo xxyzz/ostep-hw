@@ -6,7 +6,7 @@
 #include <netinet/in.h>     // sockaddr_in, INADDR_ANY
 #include <string.h>         // memset(), strlen()
 #include <arpa/inet.h>      // htons(), inet_addr()
-#include <unistd.h>         // close()
+#include <unistd.h>         // open(), read(), close()
 
 #define BUFFSIZE    1024
 #define PORT        8080
@@ -16,7 +16,7 @@
 int main(int argc, char *argv[]) {
     int sleep_seconds;
     if (argc != 2) {
-        printf("Usage: ./TCPClient sleep_seconds\n");
+        printf("Usage: ./TCPClient.out sleep_seconds file_path\n");
         exit(EXIT_FAILURE);
     } else {
         sleep_seconds = atoi(argv[1]);
@@ -32,12 +32,12 @@ int main(int argc, char *argv[]) {
     server_addr.sin_port        = htons(PORT);              // port in network byte order
     server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");   // internet address
 
+    sleep(sleep_seconds);
     if (connect(sfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr_in)) != 0)
         handle_error("connect");
 
     char buff[BUFFSIZE];
     memset(buff, 0, BUFFSIZE);
-    sleep(sleep_seconds);
     printf("Request time\n");
     if (send(sfd, "time", strlen("time"), 0) == -1)
         handle_error("send");
