@@ -38,19 +38,11 @@ int main(int argc, char *argv[]) {
 
     char buff[BUFFSIZE];
     memset(buff, 0, BUFFSIZE);
-
-    int fd;
-    if ((fd = open(argv[2], O_RDONLY)) == -1)
-        handle_error("open");
-
-    if (read(fd, buff, BUFFSIZE) == -1)
-        handle_error("read");
-
-    printf("Send file contents: %s\n", buff);
+    strncpy(buff, argv[2], strlen(argv[2]));
+    printf("Request file contents: %s\n", buff);
     if (send(sfd, buff, strlen(buff), 0) == -1)
         handle_error("send");
-    
-    close(fd);
+
     memset(buff, 0, BUFFSIZE);
     if (recv(sfd, buff, BUFFSIZE, 0) == -1)
         handle_error("recv");

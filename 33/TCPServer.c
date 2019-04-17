@@ -9,6 +9,7 @@
 #include <time.h>              // time(), strftime(), localtime()
 #include <unistd.h>            // read(), close()
 #include <fcntl.h>             // open()
+#include <aio.h>
 
 #define BUFFSIZE          1024
 #define PORT              8080
@@ -58,6 +59,14 @@ int main(int argc, char *argv[]) {
                     memset(buff, 0, BUFFSIZE);
                     if (recv(i, buff, BUFFSIZE, 0) == -1)
                         handle_error("recv");
+
+                    int fd;
+                    if ((fd = open(buff, O_RDONLY)) == -1)
+                        handle_error("open");
+
+                    memset(buff, 0, BUFFSIZE);
+                    if (read(fd, buff, BUFFSIZE) == -1)
+                        handle_error("read");
 
                     printf("Send file contents %s\n", buff);
                     if (send(i, buff, strlen(buff), 0) == -1)

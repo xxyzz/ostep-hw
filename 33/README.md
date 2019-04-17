@@ -23,3 +23,5 @@ In this (short) homework, you’ll gain some experience with event-based code an
     ```
     $ ./TCPClient.out 0 ./test.txt & ./TCPClient.out 0 ./test.txt & ./TCPClient.out 0 ./test.txt &
     ```
+
+4. Now, instead of using standard I/O system calls, use the asynchronous I/O interfaces as described in the chapter. How hard was it to incorporate asynchronous interfaces into your program?
