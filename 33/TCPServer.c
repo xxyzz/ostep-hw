@@ -11,8 +11,10 @@
 #include <fcntl.h>             // open()
 #include <aio.h>
 #include <errno.h>             // EINPROGRESS, EINTR
-#include <signal.h>
+#include <signal.h>            // sigaction()
+#include <sys/time.h>
 
+#define ONE_MILLION       1000000
 #define BUFFSIZE          1024
 #define PORT              8080
 #define LISTEN_BACKLOG    80   // Maximum length of the pending connections queue
@@ -33,8 +35,9 @@ char buff[BUFFSIZE];
 
 // static void aioSigHandler(int sig, siginfo_t *si, void *ucontext) {
 //     if (si->si_code == SI_ASYNCIO) {
-//         printf("Send file contents %s\n", buff);
 //         struct ioRequest *ioReq = si->si_value.sival_ptr;
+//         printf("Send file contents %s\n", (char *) ioReq->aiocbp->aio_buf);
+//         printf("cfd: %d", ioReq->cfd);
 //         if (send(ioReq->cfd, (char *) ioReq->aiocbp->aio_buf, BUFFSIZE, 0) == -1)
 //             handle_error("send");
 
@@ -53,6 +56,12 @@ int main(int argc, char *argv[]) {
     struct ioRequest *ioList;
     struct aiocb     *aiocbList;
     // struct sigaction  sa;
+
+    int testReqs;
+    struct timeval start, end;
+    if (argc == 2) {
+        testReqs = atoi(argv[1]);
+    }
 
     // Allocate arrays
     if ((ioList = calloc(LISTEN_BACKLOG, sizeof(struct ioRequest))) == NULL)
@@ -91,10 +100,10 @@ int main(int argc, char *argv[]) {
         rfds = afds;
         errno = 0;
         if (select(FD_SETSIZE, &rfds, NULL, NULL, NULL) == -1) {
-            handle_error("select");
             // if (errno == EINTR)
             //     continue;
             // else
+                handle_error("select");
         }
 
         for (int i = 0; i < FD_SETSIZE; i++) {
@@ -106,6 +115,8 @@ int main(int argc, char *argv[]) {
                         handle_error("accept");
                     FD_SET(cfd, &afds);
                     openReqs++;
+                    if (numReqs == 0)
+                        gettimeofday(&start, NULL);
                 } else {
                     memset(buff, 0, BUFFSIZE);
                     if (recv(i, buff, BUFFSIZE, 0) == -1)
@@ -152,6 +163,15 @@ int main(int argc, char *argv[]) {
                         openReqs--;
                 }
             }
+        }
+
+        if (argc == 2 && numReqs == testReqs && openReqs <= 0) {
+            gettimeofday(&end, NULL);
+            printf("Async I/O %d requests, time (seconds): %f\n\n", testReqs,
+                (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
+            close(sfd);
+            printf("exit");
+            exit(0);
         }
     }
     return 0;

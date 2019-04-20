@@ -25,3 +25,17 @@ In this (short) homework, you’ll gain some experience with event-based code an
     ```
 
 4. Now, instead of using standard I/O system calls, use the asynchronous I/O interfaces as described in the chapter. How hard was it to incorporate asynchronous interfaces into your program?
+
+    `aioSigHandler()` works well on Linux, but `si->si_code` is 0 on macOS and `ioReq->aiocbp->aio_buf` will cause segmentation fault.
+
+5. For fun, add some signal handling to your code. One common use of signals is to poke a server to reload some kind of configuration file, or take some other kind of administrative action. Perhaps one natural way to play around with this is to add a user-level file cache to your server, which stores recently accessed files. Implement a signal handler that clears the cache when the signal is sent to the server process.
+
+6. Finally, we have the hard part: how can you tell if the effort to build an asynchronous, event-based approach are worth it? Can you create an experiment to show the benefits? How much implementation complexity did your approach add?
+
+    ```
+    $ chmod +x ./benchmark.sh
+    $ ./benchmark.sh
+    ```
+    Async I/O 5 requests, time (seconds): 0.002514
+
+    Sync I/O 5 requests, time (seconds): 0.100726
