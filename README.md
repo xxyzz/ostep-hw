@@ -28,7 +28,7 @@
 
 9. [Scheduling: Proportional Share](./9)
 
-10. Multiprocessor Scheduling (Advanced)
+10. [Multiprocessor Scheduling (Advanced)](./10)
 
 11. ~~Summary Dialogue on CPU Virtualization~~
 
