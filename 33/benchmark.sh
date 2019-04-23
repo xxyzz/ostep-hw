@@ -11,23 +11,23 @@ else
 fi
 
 if [ $1 -eq 0 ]; then
-    echo "./TCPServer.out $LOOP"
-    ./TCPServer.out $LOOP &> ./async.txt &
+    echo "./TCPServer.out $LOOP &> ./async.txt &"
+    $(./TCPServer.out $LOOP &> ./async.txt &)
 
     for (( i = 0; i < $LOOP; i++ ))
     do
         echo "./TCPClient.out 0 ./test.txt &> /dev/null &"
-        ./TCPClient.out 0 ./test.txt &> /dev/null &
+        $(./TCPClient.out 0 ./test.txt &> /dev/null &)
     done
 fi
 
 if [ $1 -eq 1 ]; then
-    echo "./TCPServer-sync.out $LOOP"
-    ./TCPServer-sync.out $LOOP &> ./sync.txt &
+    echo "./TCPServer-sync.out $LOOP &> ./sync.txt &"
+    $(./TCPServer-sync.out $LOOP &> ./sync.txt &)
 
     for (( i = 0; i < $LOOP; i++ ))
     do
         echo "./TCPClient.out 0 ./test.txt &> /dev/null &"
-        ./TCPClient.out 0 ./test.txt &> /dev/null &
+        $(./TCPClient.out 0 ./test.txt &> /dev/null &)
     done
 fi

@@ -36,6 +36,6 @@ In this (short) homework, you’ll gain some experience with event-based code an
     $ chmod +x ./benchmark.sh
     $ ./benchmark.sh
     ```
-    Async I/O 5 requests, time (seconds): 0.002514
+    Async I/O 3 requests, time (seconds): 0.002414
 
-    Sync I/O 5 requests, time (seconds): 0.100726
+    Sync I/O 3 requests, time (seconds): 0.007419

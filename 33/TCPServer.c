@@ -30,20 +30,19 @@ struct ioRequest {    // Tracking I/O request
     struct aiocb *aiocbp;
 };
 
-fd_set afds, rfds;     // active set, read set
-char buff[BUFFSIZE];
+// fd_set afds;     // active set
+// int openReqs = 0;    // Number of I/O requests still in progress
 
 // static void aioSigHandler(int sig, siginfo_t *si, void *ucontext) {
 //     if (si->si_code == SI_ASYNCIO) {
 //         struct ioRequest *ioReq = si->si_value.sival_ptr;
-//         printf("Send file contents %s\n", (char *) ioReq->aiocbp->aio_buf);
-//         printf("cfd: %d", ioReq->cfd);
 //         if (send(ioReq->cfd, (char *) ioReq->aiocbp->aio_buf, BUFFSIZE, 0) == -1)
 //             handle_error("send");
-
+//         printf("Send file contents: %s\n", (char *) ioReq->aiocbp->aio_buf);
 //         close(ioReq->aiocbp->aio_fildes);
 //         close(ioReq->cfd);
 //         FD_CLR(ioReq->cfd, &afds);
+//         openReqs--;
 //     }
 // }
 
@@ -55,6 +54,8 @@ int main(int argc, char *argv[]) {
     socklen_t peer_addr_size;
     struct ioRequest *ioList;
     struct aiocb     *aiocbList;
+    char buff[BUFFSIZE];
+    fd_set afds, rfds;     // active set, read set
     // struct sigaction  sa;
 
     int testReqs;
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
                     if (aio_read(ioList[numReqs].aiocbp) == -1)
                         handle_error("aio_read");
 
-                    numReqs++;
+                    numReqs = (numReqs + 1) % LISTEN_BACKLOG;
                 }
             }
         }
@@ -165,7 +166,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        if (argc == 2 && numReqs == testReqs && openReqs <= 0) {
+        if (argc == 2 && numReqs == testReqs && openReqs == 0) {
             gettimeofday(&end, NULL);
             printf("Async I/O %d requests, time (seconds): %f\n\n", testReqs,
                 (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
