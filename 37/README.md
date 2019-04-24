@@ -61,3 +61,48 @@ This homework uses `disk.py` to familiarize you with how a modern hard drive wor
     `-S 2`: 40 / 2 / 30 ≈ 1
 
     `-S 4`: 40 / 4 / 30 ≈ 1
+
+7. Specify a disk with different density per zone, e.g., `-z 10,20,30`, which specifies the angular difference between blocks on the outer, middle, and inner tracks. Run some random requests (e.g., `-a -1 -A 5,-1,0`, which specifies that random requests should be used via the `-a -1` flag and that five requests ranging from 0 to the max be generated), and compute the seek, rotation, and transfer times. Use different random seeds. What is the bandwidth (in sectors per unit time) on the outer, middle, and inner tracks?
+
+    ```
+    $ ./disk.py -z 10,20,30 -a -1 -A 5,-1,0 -c
+    outer: 3/(135+270+140)=0.0055
+    middle: 2/(370+260)=0.0032
+
+    $ ./disk.py -z 10,20,30 -a -1 -A 5,-1,0 -s 1 -c
+    outer: 3/(255+385+130)=0.0039
+    middle: 2/(115+280)=0.0051
+
+    $ ./disk.py -z 10,20,30 -a -1 -A 5,-1,0 -s 2 -c
+    outer: 2/(85+10)=0.0211
+    middle: 3/(130+360+145)=0.0047
+
+    $ ./disk.py -z 10,20,30 -a -1 -A 5,-1,0 -s 3 -c
+    outer: 5/875=0.0057
+    ```
+
+8. A scheduling window determines how many requests the disk can examine at once. Generate random workloads (e.g., `-A 1000,-1,0`, with different seeds) and see how long the SATF scheduler takes when the scheduling window is changed from 1 up to the number of requests. How big of a window is needed to maximize performance? Hint: use the `-c` flag and don’t turn on graphics (`-G`) to run these quickly. When the scheduling window is set to 1, does it matter which policy you are using?
+
+    Set to 1 is equal to FIFO. Maximize performance needs size of the disk(`-w -1`).
+
+    ```
+    $ ./disk.py -A 1000,-1,0 -p SATF -w 1 -c      // 220125
+    $ ./disk.py -A 1000,-1,0 -p FIFO -w 1 -c      // 220125
+    $ ./disk.py -A 1000,-1,0 -p SSTF -w 1 -c      // 220125
+    $ ./disk.py -A 1000,-1,0 -p BSATF -w 1 -c     // 220125
+    $ ./disk.py -A 1000,-1,0 -p SATF -w 1000 -c   // 35475
+    ```
+
+9. Create a series of requests to starve a particular request, assuming an SATF policy. Given that sequence, how does it perform if you use a **bounded SATF** (BSATF) scheduling approach? In this approach, you specify the scheduling window (e.g., `-w 4`); the scheduler only moves onto the next window of requests when *all* requests in the current window have been serviced. Does this solve starvation? How does it perform, as compared to SATF? In general, how should a disk make this trade-off between performance and starvation avoidance?
+
+    ```
+    $ ./disk.py -a 12,7,8,9,10,11 -p SATF -c          // 7,8,9,10,11,12 Total: 555
+    $ ./disk.py -a 12,7,8,9,10,11 -p BSATF -w 4 -c    // 7,8,9,12,10,11 Total: 525
+    ```
+
+10. All the scheduling policies we have looked at thus far are **greedy**; they pick the next best option instead of looking for an optimal schedule. Can you find a set of requests in which greedy is not optimal?
+
+    ```
+    $ ./disk.py -a 9,20 -c            // 435
+    $ ./disk.py -a 9,20 -c -p SATF    // 465
+    ```
