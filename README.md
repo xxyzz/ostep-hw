@@ -75,3 +75,5 @@
 ### Persistence
 
 37. [Hard Disk Drives](./37)
+
+38. [Redundant Arrays of Inexpensive Disks (RAIDs)](./38)
