@@ -1,4 +1,4 @@
-all: stat myls mytail
+all: stat myls mytail myfind
 
 stat: stat.c
 	gcc -o stat.out stat.c -Wall
@@ -8,3 +8,6 @@ myls: myls.c
 
 mytail: mytail.c
 	gcc -o mytail.out mytail.c -Wall
+
+myfind: myfind.c
+	gcc -o myfind.out myfind.c -Wall
