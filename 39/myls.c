@@ -3,10 +3,10 @@
 #include <sys/stat.h>
 #include <unistd.h>    // getopt
 #include <stdlib.h>    // exit, EXIT_FAILURE, EXIT_SUCCESS
-#include <dirent.h>    // opendir, readdir
-#include <string.h>    // strlen
+#include <dirent.h>    // opendir, readdir, closedir
+#include <string.h>    // strlen, strncpy, strncmp, strncat
 #include <stdbool.h>
-#include <time.h>      // ctime
+#include <time.h>      // strftime, localtime
 
 #define STRINGSIZE 1024
 #define handle_error(msg) \
@@ -24,32 +24,29 @@ void print_file(struct stat sb) {
 
 int main(int argc, char *argv[]) {
     struct stat sb;
-    // int opt;
+    int opt;
     char * pathname = ".";
     bool list = false;
     DIR *dp;
+    opterr = 0;    // disable getopt() error message
 
-    // while ((opt = getopt(argc, argv, "l::")) != -1) {
-    //     switch (opt) {
-    //         case 'l':
-    //             if (strlen(optarg) > 0)
-    //                 pathname = optarg;
-    //             list = true;
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
-
-    if (argc >= 2 && strncmp(argv[1], "-l", 2) == 0) {
-        list = true;
-        if (argc >= 3)
-            pathname = argv[2];
+    while ((opt = getopt(argc, argv, "l:")) != -1) {
+        switch (opt) {
+            case 'l':
+                pathname = optarg;
+                list = true;
+                break;
+            case '?':
+                if (optopt == 'l')
+                    list = true;
+                break;
+            default:
+                break;
+        }
     }
 
-    if (argc == 2 && strncmp(argv[1], "-l", 2) != 0) {
+    if (!list && argc > 1)
         pathname = argv[1];
-    }
     
     if (stat(pathname, &sb) == -1)
         handle_error("stat");
