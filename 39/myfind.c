@@ -7,13 +7,13 @@
 #include <dirent.h>    // opendir, readdir, closedir
 #include <errno.h>     // EACCES
 #include <limits.h>    // INT_MAX
+#include <regex.h>     // regcomp, regexec
 
 #define STRINGSIZE 1024
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
-void print_dir(char * pathname, int currentDepth, int maxDepth) {
-    printf("%s\n", pathname);
+void find_dir(char * pathname, int currentDepth, int maxDepth, regex_t * preg) {
     DIR *dp;
     struct dirent *d;
     errno = 0;
@@ -30,13 +30,14 @@ void print_dir(char * pathname, int currentDepth, int maxDepth) {
     while ((d = readdir(dp)) != NULL) {
         char filePath[STRINGSIZE] = "";
         strncpy(filePath, pathname, strlen(pathname));
-        if (strlen(filePath) != 1 || strncmp(filePath, "/", 1) != 0)
+        if (filePath[strlen(filePath) - 1] != '/')
             strncat(filePath, "/", 1);
         strncat(filePath, d->d_name, strlen(d->d_name));
-        if (d->d_type == DT_DIR && strncmp(d->d_name, ".", 1) != 0 && strncmp(d->d_name, "..", 2) != 0) {
-            print_dir(filePath, currentDepth, maxDepth);
-        } else if (strncmp(d->d_name, ".", 1) != 0 && strncmp(d->d_name, "..", 2) != 0) {
-            printf("%s\n", filePath);
+        if (strncmp(d->d_name, ".", 1) != 0 && strncmp(d->d_name, "..", 2) != 0) {
+            if (preg == NULL || regexec(preg, d->d_name, 0, NULL, 0) != REG_NOMATCH)
+                printf("%s\n", filePath);
+            if (d->d_type == DT_DIR)
+                find_dir(filePath, currentDepth, maxDepth, preg);
         }
     }
     closedir(dp);
@@ -44,10 +45,12 @@ void print_dir(char * pathname, int currentDepth, int maxDepth) {
 
 int main(int argc, char *argv[]) {
     char * pathname = ".";
+    char * pattern = "";
     struct stat sb;
-    int maxDepth = INT_MAX, opt, currentDepth = 1;
+    int maxDepth = INT_MAX, opt, currentDepth = 1, enable_pattern = 0;
+    regex_t preg;
 
-    while ((opt = getopt(argc, argv, "d:")) != -1) {
+    while ((opt = getopt(argc, argv, "d:n:")) != -1) {
         switch (opt) {
             case 'd':
                 maxDepth = atoi(optarg);
@@ -55,29 +58,39 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Max depth must be positive.\n");
                     exit(EXIT_FAILURE);
                 }
+                break;
+            case 'n':
+                pattern = optarg;
+                enable_pattern = 1;
+                break;
             default:
                 break;
         }
     }
 
-    if (argc > 3 && optind != 3) {
-        fprintf(stderr, "Usage: %s -d [max depth] [filepath]\n", argv[1]);
+    if (argc > 3 && optind == 1) {
+        fprintf(stderr, "Usage: %s -d [max depth] -n [pattern] [filepath]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    for (size_t i = optind; i < argc; i++) {
-        pathname = argv[i];
-    } 
+    if (optind == argc - 1) {
+        pathname = argv[optind];
+    }
 
-    printf("pathname: %s  depth: %d\n", pathname, maxDepth);
+    if (enable_pattern && regcomp(&preg, pattern, 0) != 0)
+        handle_error("regcomp");
 
     if (stat(pathname, &sb) == -1)
         handle_error("stat");
 
-    if (S_ISDIR(sb.st_mode)) {
-        print_dir(pathname, currentDepth, maxDepth);
-    } else {
+    if (!enable_pattern || (enable_pattern && regexec(&preg, pathname, 0, NULL, 0) != REG_NOMATCH))
         printf("%s\n", pathname);
+
+    if (S_ISDIR(sb.st_mode)) {
+        if (enable_pattern)
+            find_dir(pathname, currentDepth, maxDepth, &preg);
+        else
+            find_dir(pathname, currentDepth, maxDepth, NULL);
     }
 
     exit(EXIT_SUCCESS);
