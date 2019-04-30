@@ -81,3 +81,5 @@
 39. [Interlude: Files and Directories](./39)
 
 40. [File System Implementation](./40)
+
+41. [Locality and The Fast File System](./41)
