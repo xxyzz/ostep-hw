@@ -83,3 +83,5 @@
 40. [File System Implementation](./40)
 
 41. [Locality and The Fast File System](./41)
+
+42. [Crash Consistency: FSCK and Journaling](./42)
