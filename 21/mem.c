@@ -13,7 +13,7 @@ double Time_GetSeconds() {
 }
 
 // Program that allocates an array of ints of certain size,
-// and then proceeeds to update each int in a loop, forever.
+// and then proceeds to update each int in a loop, forever.
 int main(int argc, char *argv[]) {
     for(int i = 1; i < 9; i++) {
         long long int size = (long long int) i;
@@ -25,8 +25,8 @@ int main(int argc, char *argv[]) {
         // the big memory allocation happens here
         int *x = malloc(size_in_bytes);
         if (x == NULL) {
-        fprintf(stderr, "memory allocation failed\n");
-        exit(1);
+            fprintf(stderr, "memory allocation failed\n");
+            exit(1);
         }
 
         long long int num_ints = size_in_bytes / sizeof(int);

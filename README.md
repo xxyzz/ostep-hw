@@ -85,3 +85,5 @@
 41. [Locality and The Fast File System](./41)
 
 42. [Crash Consistency: FSCK and Journaling](./42)
+
+43. [Log-structured File Systems](./43)
