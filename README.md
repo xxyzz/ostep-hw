@@ -87,3 +87,5 @@
 42. [Crash Consistency: FSCK and Journaling](./42)
 
 43. [Log-structured File Systems](./43)
+
+44. [Flash-based SSDs](./44)
