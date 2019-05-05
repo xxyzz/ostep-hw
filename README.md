@@ -12,6 +12,8 @@
 
 - [Anaconda Python 3](https://www.anaconda.com/distribution/#download-section): plot
 
+- 🐈
+
 ## Chapters
 
 ### Virtualization
@@ -89,3 +91,5 @@
 43. [Log-structured File Systems](./43)
 
 44. [Flash-based SSDs](./44)
+
+45. [Data Integrity and Protection](./45)
