@@ -51,3 +51,28 @@ In this homework, you’ll use `checksum.py` to investigate various aspects of c
     ```
 
     When two numbers have the same value of % 255.
+
+## Homework (Code)
+
+In this part of the homework, you’ll write some of your own code to implement various checksums.
+
+### Questions
+
+1. Write a short C program (called `check-xor.c`) that computes an XOR-based checksum over an input file, and prints the checksum as output. Use a 8-bit unsigned char to store the (one byte) checksum. Make some test files to see if it works as expected.
+
+    ```
+    $ echo "1234" >> ./test.txt
+    $ make
+    $ ./check-xor.out ./test.txt
+    ```
+
+2. Now write a short C program (called `check-fletcher.c`) that computes the Fletcher checksum over an input file. Once again, test your program to see if it works.
+
+3. Now compare the performance of both: is one faster than the other? How does performance change as the size of the input file changes? Use internal calls to `gettimeofday` to time the programs. Which should you use if you care about performance? About checking ability?
+
+    ```
+    $ chmod +x ./compare-xor-fletcher.sh
+    $ ./compare-xor-fletcher.sh 
+    ```
+
+    XOR is faster.
