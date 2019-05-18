@@ -24,7 +24,7 @@ This homework lets you explore some real code that uses locks and condition vari
 
 4. Let’s look at some timings. How long do you think the following execution, with one producer, three consumers, a single-entry shared buffer, and each consumer pausing at point `c3` for a second, will take? `./main-two-cvs-while -p 1 -c 3 -m 1 -C 0,0,0,1,0,0,0:0,0,0,1,0,0,0:0,0,0,1,0,0,0 -l 10 -v -t`
 
-    11 seconds
+    11 seconds. It sleeps after the thread reacquiring the lock.
 
 5. Now change the size of the shared buffer to 3 (`-m 3`). Will this make any difference in the total time?
 
