@@ -71,8 +71,8 @@ In this part of the homework, you’ll write some of your own code to implement 
 3. Now compare the performance of both: is one faster than the other? How does performance change as the size of the input file changes? Use internal calls to `gettimeofday` to time the programs. Which should you use if you care about performance? About checking ability?
 
     ```
-    $ chmod +x ./compare-xor-fletcher.sh
-    $ ./compare-xor-fletcher.sh 
+    $ chmod +x ./compare.sh
+    $ ./compare.sh 
     ```
 
     XOR is faster.
@@ -90,3 +90,10 @@ In this part of the homework, you’ll write some of your own code to implement 
     `poly 0x1021: (1) 0001 0000 0010 0001`
 
     It can detect single bit error, two-bit error, error with odd number of bits and has 1 - 0.5^16 chance to detect burst error longer than or equal to 16 bits.
+
+5. Now build a tool (`create-csum.c`) that computes a single-byte checksum for every 4KB block of a file, and records the results in an output file (specified on the command line). Build a related tool(`check-csum.c`) that reads a file, computes the checksums over each block, and compares the results to the stored checksums stored in another file. If there is a problem, the program should print that the file has been corrupted. Test the program by manually corrupting the file.
+
+    ```
+    $ chmod +x ./csum.sh
+    $ ./csum.sh 
+    ```

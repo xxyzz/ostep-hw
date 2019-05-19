@@ -1,16 +1,16 @@
 #!/bin/bash
 
 FILENAME="./test.txt"
-rm -f $FILENAME
+rm $FILENAME
 TESTLOOP=64
 
 function create_file {
     for i in $( seq $1 $2 )
     do
-        echo $i >> $FILENAME
+        echo -n 0 >> $FILENAME
     done
 
-    echo "$(($2+1)) lines test file."
+    echo "$(($2+1)) characters test file."
     ./check-xor.out      $FILENAME
     ./check-fletcher.out $FILENAME
     ./crc.out            $FILENAME
@@ -27,3 +27,5 @@ do
         create_file $(($j*1000/2)) $(($j*1000-1))
     fi
 done
+
+rm $FILENAME
