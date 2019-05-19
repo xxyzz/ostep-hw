@@ -76,3 +76,17 @@ In this part of the homework, you’ll write some of your own code to implement 
     ```
 
     XOR is faster.
+
+4. Read about the 16-bit CRC and then implement it. Test it on a number of different inputs to ensure that it works. How is its performance as compared to the simple XOR and Fletcher? How about its checking ability?
+
+    [A Painless Guide to CRC Error Detection Algorithms](http://www.ross.net/crc/download/crc_v3.txt)
+
+    [Computer Networks Fifth Edition(chapter 3.2.2 p.213-215)](http://iips.icci.edu.iq/images/exam/Computer-Networks---A-Tanenbaum---5th-edition.pdf)
+
+    [CRC16-CCITT](http://srecord.sourceforge.net/crc16-ccitt.html)
+
+    It's slower.
+
+    `poly 0x1021: (1) 0001 0000 0010 0001`
+
+    It can detect single bit error, two-bit error, error with odd number of bits and has 1 - 0.5^16 chance to detect burst error longer than or equal to 16 bits.

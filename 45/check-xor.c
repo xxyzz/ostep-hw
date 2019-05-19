@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
 
     printf("XOR-based checksum: %d\n", xor);
     printf("time(seconds): %f\n", Time_GetSeconds() - t);
+    close(fd);
 
     return 0;
 }

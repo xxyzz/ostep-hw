@@ -2,7 +2,7 @@
 
 FILENAME="./test.txt"
 rm -f $FILENAME
-TESTLOOP=16
+TESTLOOP=64
 
 function create_file {
     for i in $( seq $1 $2 )
@@ -11,8 +11,9 @@ function create_file {
     done
 
     echo "$(($2+1)) lines test file."
-    ./check-xor.out $FILENAME
+    ./check-xor.out      $FILENAME
     ./check-fletcher.out $FILENAME
+    ./crc.out            $FILENAME
     echo ""
 }
 

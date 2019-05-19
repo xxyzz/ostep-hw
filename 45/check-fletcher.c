@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 
     printf("Fletcher checksum: %d, %d\n", fletcher_a, fletcher_b);
     printf("time(seconds): %f\n", Time_GetSeconds() - t);
+    close(fd);
 
     return 0;
 }
