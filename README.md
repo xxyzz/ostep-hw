@@ -93,3 +93,9 @@
 44. [Flash-based SSDs](./44)
 
 45. [Data Integrity and Protection](./45)
+
+46. ~~Summary Dialogue on Persistence~~
+
+47. ~~A Dialogue on Distribution~~
+
+48. [Distributed Systems](./48)
