@@ -2,13 +2,12 @@
 
 {
     if ($5 == "C3" && $8 == "getattr") {
-        fileSize[$10] = $6    # request/reply pair id
+        pairID[$6] = $10     # store file handler to pair id array
         users[$2]++
-    } else if ($5 == "R3" && $8 == "getattr") {
-        for (f in fileSize) {
-            if (fileSize[f] == $6)
-                fileSize[f] = $21    # file size
-        }
+    }
+    
+    if ($5 == "R3" && $8 == "getattr") {
+        fileSize[pairID[$6]] = $21
     }
 }
 END {
@@ -16,9 +15,9 @@ END {
         sum = sum + strtonum("0x"fileSize[f])
     
     for (user in users)
-        print "User", user, "request times", users[user]
+        print "Client", user, "requests", users[user]
 
-    print length(users), "users"
+    print length(users), "clients"
 
     printf("Average file size: %d\n", sum / length(fileSize))
 }
