@@ -6,11 +6,11 @@ import sys
 
 matrix = np.loadtxt(sys.stdin)
 
-print(matrix[-5:, :])
-
-plt.bar(matrix[:, 1], matrix[:, 0], color='orange')
+plt.bar(matrix[:, 1], matrix[:, 0], color='orange', width=0.1)
 plt.margins(0)
-plt.xlabel('Latency (seconds)')
+# plt.xticks(np.arange(10)/10, np.arange(10)/10)
+# plt.tick_params(axis='x', which='major', labelsize=5)
+plt.xlabel('Latency (milliseconds)')
 plt.ylabel('Number')
 plt.title('The latencies of request/reply pairs')
 plt.savefig('latency.png', dpi=227)
