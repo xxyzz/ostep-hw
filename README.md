@@ -101,3 +101,5 @@
 48. [Distributed Systems](./48)
 
 49. [Sun’s Network File System (NFS)](./49)
+
+50. [The Andrew File System (AFS)](./50)
