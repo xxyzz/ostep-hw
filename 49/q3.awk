@@ -1,14 +1,15 @@
 #! /usr/bin/awk -f
 
 {
-    if ($5 == "C3" && $8 == "getattr") {
-        pairID[$6] = $10     # store file handler to pair id array
+    if ($5 == "C3" && $8 == "getattr")
         users[$2]++
-    }
-    
-    if ($5 == "R3" && $8 == "getattr") {
-        fileSize[pairID[$6]] = $21
-    }
+
+    # size   ($21): size of the file in bytes
+    # fileid ($31): number which uniquely identifies the file within its
+    #               file system (on UNIX this would be the inumber)
+
+    if ($5 == "R3" && $8 == "getattr")
+        fileSize[$31] = $21
 }
 END {
     for (f in fileSize)
@@ -19,5 +20,5 @@ END {
 
     print length(users), "clients"
 
-    printf("Average file size: %d\n", sum / length(fileSize))
+    printf("Average file size: %d bytes\n", sum / length(fileSize))
 }

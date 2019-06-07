@@ -56,7 +56,7 @@ In this homework, you’ll do a little bit of NFS trace analysis using real trac
 
     ```
     $ awk -f q3.awk anon-deasna-021016-1300.txt | sort -nk4 -r
-    Average file size: 1613215
+    Average file size: 1682687 bytes
     Client 31.0320 requests 398535
     Client 40.03fe requests 224554
     Client 33.03fe requests 66200
@@ -67,6 +67,8 @@ In this homework, you’ll do a little bit of NFS trace analysis using real trac
     Client 33.03ef requests 1
     136 clients
     ```
+
+    See chapter 2 of the [NFS Version 3 Protocol Specification](https://tools.ietf.org/html/rfc1813).
 
 4. You can also look at requests to a given file and determine how files are being accessed. For example, is a given file being read or written sequentially? Or randomly? Look at the details of READ and WRITE requests/replies to compute the answer.
 
@@ -109,3 +111,5 @@ In this homework, you’ll do a little bit of NFS trace analysis using real trac
     See the answer of question two.
 
 8. There are many other questions you could answer through more analysis. What questions do you think are important? Suggest them to us, and perhaps we’ll add them here!
+
+    Find attr cache time.
