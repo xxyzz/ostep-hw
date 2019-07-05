@@ -14,6 +14,10 @@
 
 - 🐈
 
+## [ostep-projects](./projects)
+
+C/Linux Projects and Kernel Hacking Projects (xv6)
+
 ## Chapters
 
 ### Virtualization
