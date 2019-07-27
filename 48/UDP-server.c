@@ -1,7 +1,12 @@
-#include <assert.h>
-#include "UDP-lib.h"
+#define _GNU_SOURCE         // NI_MAXHOST, NI_MAXSERV
+#define _DARWIN_C_SOURCE    // NI_MAXHOST, NI_MAXSERV
 
-int main(int argc, char *argv[]) {
+#include "UDP-lib.h"
+#include <assert.h>
+
+int
+main(int argc, char *argv[])
+{
     struct sockaddr_storage peer_addr;
     socklen_t peer_addr_len;
     ssize_t nread;    // signed size
@@ -23,14 +28,9 @@ int main(int argc, char *argv[]) {
                         peer_addr_len, host, NI_MAXHOST,
                         service, NI_MAXSERV, NI_NUMERICSERV);
         if (s == 0)
-            printf("Received %zd bytes from %s:%s\n",
-                    nread, host, service);
+            printf("Received %zd bytes from %s:%s: %s\n",
+                    nread, host, service, buf);
         else
             fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-
-        if (UDP_Write(sfd, buf, nread, 
-                    (struct sockaddr *) &peer_addr,
-                    peer_addr_len) != nread)
-            fprintf(stderr, "Error sending response\n");
     }
 }

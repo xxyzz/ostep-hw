@@ -8,6 +8,8 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 
 - [Unix Utilities](./initial-utilities) (cat, grep, zip/unzip)
 
+- [Reverse](./initial-reverse)
+
 ## Kernel Hacking Projects (xv6)
 
 ### Initial Projects
