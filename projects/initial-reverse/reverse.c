@@ -109,11 +109,15 @@ main(int argc, char *argv[])
 
     // print reversed lines
     head = prev;
+    LinkedList *temp; 
     while (head != NULL) {
+        temp = head;
         fprintf(out, "%s", head->line);
         head = head->next;
+        free(temp);
     }
 
+    free(line);
     fclose(in);
     fclose(out);
 

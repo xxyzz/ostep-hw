@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <stdlib.h>    // exit
+#include <stdlib.h>    // exit, free
 #include <string.h>    // strstr
 
 int
@@ -25,6 +25,9 @@ main(int argc, char *argv[])
     while (getline(&line, &linecap, fp) > 0)
         if (strstr(line, argv[1]))
             printf("%s", line);
+
+    free(line);
+    fclose(fp);
 
     return 0;
 }

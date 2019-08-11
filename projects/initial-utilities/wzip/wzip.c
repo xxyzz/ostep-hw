@@ -39,6 +39,7 @@ main(int argc, char *argv[])
         }
     }
     writeFile(count, oldBuff);
-    
+    fclose(fp);
+
     return 0;
 }
