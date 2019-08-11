@@ -80,7 +80,7 @@ In this homework, you will gain some familiarity with memory allocation. First, 
 
     ```
     ==26852== Invalid read of size 4
-    ==26852==    at 0x104D0: main (free_then_print.c:7)
+    ==26852==    at 0x104D0: main (free_then_print.c:8)
     ==26852==  Address 0x49c6028 is 0 bytes inside a block of size 100 free'd
     ==26852==    at 0x4848B8C: free (vg_replace_malloc.c:530)
     ==26852==    by 0x104CB: main (free_then_print.c:6)
@@ -91,10 +91,20 @@ In this homework, you will gain some familiarity with memory allocation. First, 
 7. Now pass a funny value to free (e.g., a pointer in the middle of the array you allocated above). What happens? Do you need tools to find this type of problem?
 
     ```
-    ==27053== Conditional jump or move depends on uninitialised value(s)
-    ==27053==    at 0x4848B3C: free (vg_replace_malloc.c:530)
-    ==27053==    by 0x104A3: main (free_then_print.c:7)
+    $ ./free_then_print.out
+    free(): invalid pointer
+    [1]    29093 abort (core dumped)  ./free_then_print.out
     ```
+
+    ```
+    ==29041== Invalid free() / delete / delete[] / realloc()
+    ==29041==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+    ==29041==    by 0x108706: main (free_then_print.c:7)
+    ==29041==  Address 0x522d044 is 4 bytes inside a block of size 100 alloc'd
+    ==29041==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+    ==29041==    by 0x1086F2: main (free_then_print.c:5)
+    ```
+
 8. Try out some of the other interfaces to memory allocation. For example, create a simple vector-like data structure and related routines that use `realloc()` to manage the vector. Use an array to store the vectors elements; when a user adds an entry to the vector, use `realloc()` to allocate more space for it. How well does such a vector perform? How does it compare to a linked list? Use `valgrind` to help you find bugs.
 
     [Dynamic array - Wikipedia](https://en.wikipedia.org/wiki/Dynamic_array#Performance)
