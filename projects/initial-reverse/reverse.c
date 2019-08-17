@@ -39,19 +39,28 @@ main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
-        if (fstat(in->_file, s1) != 0) {
+        if (fstat(fileno(in), s1) != 0) {
+            free(s1);
+            free(s2);
             fprintf(stderr, "reverse: fstat error\n");
             exit(EXIT_FAILURE);
         }
-        if (fstat(out->_file, s2) != 0) {
+        if (fstat(fileno(out), s2) != 0) {
+            free(s1);
+            free(s2);
             fprintf(stderr, "reverse: fstat error\n");
             exit(EXIT_FAILURE);
         }
 
         if (s1->st_ino == s2->st_ino) {
+            free(s1);
+            free(s2);
             fprintf(stderr, "reverse: input and output file must differ\n");
             exit(EXIT_FAILURE);
         }
+
+        free(s1);
+        free(s2);
     }
 
     if (argc > 3) {
@@ -106,14 +115,14 @@ main(int argc, char *argv[])
         prev = curr;
         curr = temp;
     }
+    head = prev;
 
     // print reversed lines
-    head = prev;
-    LinkedList *temp; 
     while (head != NULL) {
-        temp = head;
+        LinkedList *temp = head;
         fprintf(out, "%s", head->line);
         head = head->next;
+        free(temp->line);
         free(temp);
     }
 
