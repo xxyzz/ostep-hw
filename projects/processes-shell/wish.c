@@ -36,8 +36,6 @@ main(int argc, char *argv[])
             if (line[nread - 1] == '\n')
                 line[nread - 1] = '\0';
 
-            char *args[] = {line, NULL};
-
             pid = fork();
             if (pid == -1)
             {
@@ -45,18 +43,25 @@ main(int argc, char *argv[])
             }
             else if (pid == 0)
             {
+                char *args[BUFF_SIZE];
+                int args_num = 0;
+                while ((args[args_num++] = strsep(&line, " ")) != NULL)
+                    ;
+
                 // child process
                 // check path
                 char path[BUFF_SIZE] = "/bin/";
-                if (access(strcat(path, line), X_OK) != 0)
+                if (access(strcat(path, args[0]), X_OK) != 0)
                 {
                     strcpy(path, "/usr/bin/");
-                    if (access(strcat(path, line), X_OK) != 0)
+                    if (access(strcat(path, args[0]), X_OK) != 0)
                     {
                         printError();
                         _exit(EXIT_FAILURE);
                     }
                 }
+
+                args[0] = path;
 
                 if (execv(path, args) == -1)
                     printError();

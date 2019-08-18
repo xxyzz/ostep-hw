@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <string.h>
+#include <string.h>    // strlen, strsep
 
 #define INTERACTIVE_MODE 1
 #define BATH_MODE 2
