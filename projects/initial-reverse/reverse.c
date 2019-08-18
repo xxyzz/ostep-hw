@@ -68,11 +68,9 @@ main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    LinkedList *head = malloc(sizeof(LinkedList)),
-               *curr = malloc(sizeof(LinkedList)),
-               *prev = NULL;
+    LinkedList *head = malloc(sizeof(LinkedList)), *curr = NULL, *prev = NULL;
 
-    if (head == NULL || curr == NULL) {
+    if (head == NULL) {
         fprintf(stderr, "reverse: malloc failed\n");
         exit(EXIT_FAILURE);
     }
