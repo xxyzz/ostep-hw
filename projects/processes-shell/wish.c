@@ -15,6 +15,7 @@ main(int argc, char *argv[])
     size_t linecap = 0;
     ssize_t nread;
     pid_t pid;
+    char *paths[BUFF_SIZE] = {"/bin", NULL};
 
     if (argc > 1)
     {
@@ -36,42 +37,71 @@ main(int argc, char *argv[])
             if (line[nread - 1] == '\n')
                 line[nread - 1] = '\0';
 
-            pid = fork();
-            if (pid == -1)
+            char *args[BUFF_SIZE];
+            int args_num = 0;
+            while ((args[args_num] = strsep(&line, " ")) != NULL)
+                args_num++;
+
+            // check built-in commands first
+            if (strcmp(args[0], "exit") == 0)
             {
-                printError();
-            }
-            else if (pid == 0)
-            {
-                char *args[BUFF_SIZE];
-                int args_num = 0;
-                while ((args[args_num++] = strsep(&line, " ")) != NULL)
-                    ;
-
-                // child process
-                // check path
-                char path[BUFF_SIZE] = "/bin/";
-                if (access(strcat(path, args[0]), X_OK) != 0)
-                {
-                    strcpy(path, "/usr/bin/");
-                    if (access(strcat(path, args[0]), X_OK) != 0)
-                    {
-                        printError();
-                        _exit(EXIT_FAILURE);
-                    }
-                }
-
-                args[0] = path;
-
-                if (execv(path, args) == -1)
+                if (args_num > 1)
                     printError();
+                else
+                {
+                    free(line);
+                    fclose(in);
+                    exit(EXIT_SUCCESS);
+                }
+            }
+            else if (strcmp(args[0], "path") == 0)
+            {
+                size_t i = 0;
+                for ( ; i < args_num; i++)
+                    paths[i] = args[i+1];
+
+                paths[i+1] = NULL;
             }
             else
             {
-                // parent process
-                // wait all children
-                while(wait(NULL) != -1)
-                    ;
+                // find in path
+                int i = 0, found = 0;
+                char path[BUFF_SIZE] = "";
+                while (paths[i] != NULL)
+                {
+                    strcpy(path, paths[i]);
+                    strcat(path, "/");
+                    if (access(strcat(path, args[0]), X_OK) == 0)
+                    {
+                        args[0] = path;
+                        found = 1;
+                        break;
+                    }
+                    i++;
+                }
+
+                if (!found)
+                {
+                    printError();
+                    continue;
+                }
+
+                pid = fork();
+                if (pid == -1)
+                    printError();
+                else if (pid == 0)
+                {
+                    // child process    
+                    if (execv(path, args) == -1)
+                        printError();  
+                }
+                else
+                {
+                    // parent process
+                    // wait all children
+                    while(wait(NULL) != -1)
+                        ;
+                }
             }
         }
         else if (feof(in) != 0)
