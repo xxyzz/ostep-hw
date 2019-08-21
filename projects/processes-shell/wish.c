@@ -17,17 +17,17 @@ parseInput(char *line, ssize_t nread, char *args[], int *args_num)
 }
 
 int
-searchPath(char *paths[], char path[], char *firstArg)
+searchPath(char *paths[], char **path, char *firstArg)
 {
     // search executable file in path
     int i = 0;
     while (paths[i] != NULL)
     {
-        strcpy(path, paths[i]);
-        strcat(path, "/");
-        if (access(strcat(path, firstArg), X_OK) == 0)
+        *path = strdup(paths[i]);
+        strcat(*path, "/");
+        if (access(strcat(*path, firstArg), X_OK) == 0)
         {
-            firstArg = path;
+            firstArg = strdup(*path);
             return 1;
         }
         i++;
@@ -60,16 +60,17 @@ executeCommands(char *args[], int args_num, char *paths[], char *line, FILE *in)
     else if (strcmp(args[0], "path") == 0)
     {
         size_t i = 0;
-        for ( ; i < args_num; i++)
-            paths[i] = args[i+1];
+        paths[0] = NULL;
+        for ( ; i < args_num - 1; i++)
+            paths[i] = strdup(args[i+1]);
 
         paths[i+1] = NULL;
     }
     else
     {
         // not built-in commands
-        char path[BUFF_SIZE] = "";
-        if (searchPath(paths, path, args[0]))
+        char *path = "";
+        if (searchPath(paths, &path, args[0]))
         {
             pid_t pid = fork();
             if (pid == -1)
@@ -114,7 +115,8 @@ main(int argc, char *argv[])
         }
     }
 
-    while (1) {
+    while (1)
+    {
         if (mode == INTERACTIVE_MODE)
             printf("wish> ");
 
