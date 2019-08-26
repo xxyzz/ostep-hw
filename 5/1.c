@@ -15,7 +15,7 @@ main(int argc, char *argv[]) {
         printf("x in child process: %d\n", x);
     } else {
         x = 102;
-        printf("x in parent prosess: %d\n", x);
+        printf("x in parent process: %d\n", x);
     }
     return 0;
 }
