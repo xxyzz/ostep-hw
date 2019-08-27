@@ -86,8 +86,7 @@ redirect(FILE *out)
             printError();
             return;
         }
-        fclose(stdout);
-        fclose(stderr);
+        fclose(out);
     }
 }
 
@@ -145,7 +144,6 @@ executeCommands(char *args[], int args_num, char *paths[], char *line, FILE *in,
                 // wait all children
                 while(wait(NULL) != -1)
                     ;
-                fclose(out);
             }
         }
         else
