@@ -14,6 +14,12 @@ parseInput(char *line, ssize_t nread, char *args[], int *args_num, FILE **output
         line[nread - 1] = '\0';
 
     char *command = strsep(&line, ">");
+    if (command == NULL || command[0] == '\0')
+    {
+        printError();
+        return -1;
+    }
+
     if (line != NULL)
     {
         // contain white space in the middle or ">"
@@ -21,11 +27,13 @@ parseInput(char *line, ssize_t nread, char *args[], int *args_num, FILE **output
         if (regcomp(&preg, "\\S\\s+\\S", REG_EXTENDED) != 0)
         {
             printError();
+            regfree(&preg);
             return -1;
         }
         if (regexec(&preg, line, 0, NULL, 0) == 0 || strstr(line, ">") != NULL)
         {
             printError();
+            regfree(&preg);
             return -1;
         }
 
