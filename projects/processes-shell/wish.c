@@ -46,8 +46,20 @@ parseInput(char *line, ssize_t nread, char *args[], int *args_num, FILE **output
         }
     }
 
-    while ((args[*args_num] = strsep(&command, " ")) != NULL)
-        (*args_num)++;
+    char **ap = args;
+    while ((*ap = strsep(&command, " \t")) != NULL)
+        if (**ap != '\0')
+        {
+            ap++;
+            if (++(*args_num) > BUFF_SIZE)
+            {
+                (*args_num)--;
+                break;
+            }
+        }
+
+    if (*args_num == 0)
+        return -1;
 
     return 0;
 }
