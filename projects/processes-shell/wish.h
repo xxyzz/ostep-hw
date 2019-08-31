@@ -5,6 +5,12 @@
 #define BATH_MODE 2
 #define BUFF_SIZE 256
 
+struct function_args
+{
+    pthread_t thread;
+    char *command;
+};
+
 void
 printError()
 {
@@ -18,3 +24,18 @@ preExit(char *line, FILE *in)
     free(line);
     fclose(in);
 }
+
+void *
+parseInput(void *arg);
+
+int
+searchPath(char **path, char *firstArg);
+
+void
+redirect(FILE *out);
+
+void
+executeCommands(char *args[], int args_num, FILE *out);
+
+void
+trim(char *s);

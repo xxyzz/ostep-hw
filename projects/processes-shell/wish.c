@@ -2,47 +2,77 @@
 #include <stdlib.h>      // exit
 #include <sys/types.h>
 #include <unistd.h>      // fork, exec, access, exit, chdir
-#include <sys/wait.h>    // wait
+#include <sys/wait.h>    // waitpid
 #include "wish.h"
-#include <regex.h>
+#include <regex.h>       // regcomp, regexec
+#include <pthread.h>     // pthread_create, pthread_join
+#include <ctype.h>       // isspace
 
-int
-parseInput(char *line, ssize_t nread, char *args[], int *args_num, FILE **output)
+FILE *in = NULL;
+char *paths[BUFF_SIZE] = {"/bin", NULL};
+char *line = NULL;
+
+void
+trim(char *s)
 {
-    // remove newline
-    if (line[nread - 1] == '\n')
-        line[nread - 1] = '\0';
+    // trim leading spaces
+    while (isspace(*s))
+        s++;
 
-    char *command = strsep(&line, ">");
-    if (command == NULL || command[0] == '\0')
+    if (*s == '\0')
+        return;    // empty string
+
+    // trim trailing spaces
+    char *end = s + strlen(s) - 1;
+    while (end > s && isspace(*end))
+        end--;
+
+    end[1] = '\0';  
+}
+
+void *
+parseInput(void *arg)
+{
+    char *args[BUFF_SIZE];
+    int args_num = 0;
+    FILE *output = stdout;
+
+    struct function_args *fun_args = (struct function_args *) arg;
+    char *commandLine = fun_args->command;
+
+    char *command = strsep(&commandLine, ">");
+    if (command == NULL || *command == '\0')
     {
         printError();
-        return -1;
+        return NULL;
     }
 
-    if (line != NULL)
+    trim(command);
+
+    if (commandLine != NULL)
     {
         // contain white space in the middle or ">"
-        regex_t preg;
-        if (regcomp(&preg, "\\S\\s+\\S", REG_EXTENDED) != 0)
+        regex_t reg;
+        if (regcomp(&reg, "\\S\\s+\\S", REG_EXTENDED) != 0)
         {
             printError();
-            regfree(&preg);
-            return -1;
+            regfree(&reg);
+            return NULL;
         }
-        if (regexec(&preg, line, 0, NULL, 0) == 0 || strstr(line, ">") != NULL)
+        if (regexec(&reg, commandLine, 0, NULL, 0) == 0 || strstr(commandLine, ">") != NULL)
         {
             printError();
-            regfree(&preg);
-            return -1;
+            regfree(&reg);
+            return NULL;
         }
 
-        regfree(&preg);
+        regfree(&reg);
+        trim(commandLine);
 
-        if ((*output = fopen(line, "w")) == NULL)
+        if ((output = fopen(commandLine, "w")) == NULL)
         {
             printError();
-            return -1;
+            return NULL;
         }
     }
 
@@ -50,22 +80,20 @@ parseInput(char *line, ssize_t nread, char *args[], int *args_num, FILE **output
     while ((*ap = strsep(&command, " \t")) != NULL)
         if (**ap != '\0')
         {
+            trim(*ap);
             ap++;
-            if (++(*args_num) > BUFF_SIZE)
-            {
-                (*args_num)--;
+            if (++args_num >= BUFF_SIZE)
                 break;
-            }
         }
 
-    if (*args_num == 0)
-        return -1;
+    if (args_num > 0)
+        executeCommands(args, args_num, output);
 
-    return 0;
+    return NULL;
 }
 
 int
-searchPath(char *paths[], char **path, char *firstArg)
+searchPath(char **path, char *firstArg)
 {
     // search executable file in path
     int i = 0;
@@ -111,7 +139,7 @@ redirect(FILE *out)
 }
 
 void
-executeCommands(char *args[], int args_num, char *paths[], char *line, FILE *in, FILE *out)
+executeCommands(char *args[], int args_num, FILE *out)
 {
     // check built-in commands first
     if (strcmp(args[0], "exit") == 0)
@@ -145,7 +173,7 @@ executeCommands(char *args[], int args_num, char *paths[], char *line, FILE *in,
     {
         // not built-in commands
         char *path = "";
-        if (searchPath(paths, &path, args[0]) == 0)
+        if (searchPath(&path, args[0]) == 0)
         {
             pid_t pid = fork();
             if (pid == -1)
@@ -159,12 +187,7 @@ executeCommands(char *args[], int args_num, char *paths[], char *line, FILE *in,
                     printError();
             }
             else
-            {
-                // parent process
-                // wait all children
-                while(wait(NULL) != -1)
-                    ;
-            }
+                waitpid(pid, NULL, 0);    // parent process waits child
         }
         else
             printError();    // not fond in path
@@ -175,12 +198,9 @@ int
 main(int argc, char *argv[])
 {
     int mode = INTERACTIVE_MODE;
-    FILE *in = NULL;
     in = stdin;
-    char *line = NULL;
     size_t linecap = 0;
     ssize_t nread;
-    char *paths[BUFF_SIZE] = {"/bin", NULL};
 
     if (argc > 1)
     {
@@ -199,11 +219,29 @@ main(int argc, char *argv[])
 
         if ((nread = getline(&line, &linecap, in)) > 0)
         {
-            char *args[BUFF_SIZE];
-            int args_num = 0;
-            FILE *output = stdout;
-            if (parseInput(line, nread, args, &args_num, &output) == 0)
-                executeCommands(args, args_num, paths, line, in, output);
+            char *command;
+            int commands_num = 0;
+            struct function_args args[BUFF_SIZE];
+
+            // remove newline character
+            if (line[nread - 1] == '\n')
+                line[nread - 1] = '\0';
+
+            while ((command = strsep(&line, "&")) != NULL)
+                if (command[0] != '\0')
+                {
+                    args[commands_num++].command = strdup(command);
+                    if (commands_num >= BUFF_SIZE)
+                        break;
+                }
+
+            for (size_t i = 0; i < commands_num; i++)
+                if (pthread_create(&args[i].thread, NULL, &parseInput, &args[i]) != 0)
+                    printError();
+
+            for (size_t i = 0; i < commands_num; i++)
+                if (pthread_join(args[i].thread, NULL) != 0)
+                    printError();
         }
         else if (feof(in) != 0)
         {
