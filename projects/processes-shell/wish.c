@@ -1,10 +1,10 @@
-#include <stdio.h>
+#include <stdio.h>       // fopen, fclose, fileno, getline, feof
 #include <stdlib.h>      // exit
 #include <sys/types.h>
 #include <unistd.h>      // fork, exec, access, exit, chdir
 #include <sys/wait.h>    // waitpid
 #include "wish.h"
-#include <regex.h>       // regcomp, regexec
+#include <regex.h>       // regcomp, regexec, regfree
 #include <pthread.h>     // pthread_create, pthread_join
 #include <ctype.h>       // isspace
 
@@ -12,7 +12,7 @@ FILE *in = NULL;
 char *paths[BUFF_SIZE] = {"/bin", NULL};
 char *line = NULL;
 
-void
+char *
 trim(char *s)
 {
     // trim leading spaces
@@ -20,14 +20,15 @@ trim(char *s)
         s++;
 
     if (*s == '\0')
-        return;    // empty string
+        return s;    // empty string
 
     // trim trailing spaces
     char *end = s + strlen(s) - 1;
     while (end > s && isspace(*end))
         end--;
 
-    end[1] = '\0';  
+    end[1] = '\0';
+    return s;
 }
 
 void *
@@ -36,20 +37,18 @@ parseInput(void *arg)
     char *args[BUFF_SIZE];
     int args_num = 0;
     FILE *output = stdout;
-
     struct function_args *fun_args = (struct function_args *) arg;
-    char *commandLine = fun_args->command;
 
-    char *command = strsep(&commandLine, ">");
+    char *command = strsep(&fun_args->command, ">");
     if (command == NULL || *command == '\0')
     {
         printError();
         return NULL;
     }
 
-    trim(command);
+    command = trim(command);
 
-    if (commandLine != NULL)
+    if (fun_args->command != NULL)
     {
         // contain white space in the middle or ">"
         regex_t reg;
@@ -59,7 +58,7 @@ parseInput(void *arg)
             regfree(&reg);
             return NULL;
         }
-        if (regexec(&reg, commandLine, 0, NULL, 0) == 0 || strstr(commandLine, ">") != NULL)
+        if (regexec(&reg, fun_args->command, 0, NULL, 0) == 0 || strstr(fun_args->command, ">") != NULL)
         {
             printError();
             regfree(&reg);
@@ -67,9 +66,8 @@ parseInput(void *arg)
         }
 
         regfree(&reg);
-        trim(commandLine);
 
-        if ((output = fopen(commandLine, "w")) == NULL)
+        if ((output = fopen(trim(fun_args->command), "w")) == NULL)
         {
             printError();
             return NULL;
@@ -80,7 +78,7 @@ parseInput(void *arg)
     while ((*ap = strsep(&command, " \t")) != NULL)
         if (**ap != '\0')
         {
-            trim(*ap);
+            *ap = trim(*ap);
             ap++;
             if (++args_num >= BUFF_SIZE)
                 break;
@@ -102,10 +100,7 @@ searchPath(char **path, char *firstArg)
         *path = strdup(paths[i]);
         strcat(*path, "/");
         if (access(strcat(*path, firstArg), X_OK) == 0)
-        {
-            firstArg = strdup(*path);
             return 0;
-        }
         i++;
     }
     return -1;
@@ -245,7 +240,8 @@ main(int argc, char *argv[])
         }
         else if (feof(in) != 0)
         {
-            preExit(line, in);
+            free(line);
+            fclose(in);
             exit(EXIT_SUCCESS);    // EOF
         }
     }

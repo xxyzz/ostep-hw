@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <string.h>    // strlen, strsep
+#include <string.h>    // strlen, strsep, strcat, strdup, strcmp
 
 #define INTERACTIVE_MODE 1
 #define BATH_MODE 2
@@ -18,13 +18,6 @@ printError()
     write(STDERR_FILENO, error_message, strlen(error_message)); 
 }
 
-void
-preExit(char *line, FILE *in)
-{
-    free(line);
-    fclose(in);
-}
-
 void *
 parseInput(void *arg);
 
@@ -37,5 +30,5 @@ redirect(FILE *out);
 void
 executeCommands(char *args[], int args_num, FILE *out);
 
-void
-trim(char *s);
+char *
+trim(char *);
