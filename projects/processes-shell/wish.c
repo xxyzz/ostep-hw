@@ -12,6 +12,13 @@ FILE *in = NULL;
 char *paths[BUFF_SIZE] = {"/bin", NULL};
 char *line = NULL;
 
+void
+clean(void)
+{
+    free(line);
+    fclose(in);
+}
+
 char *
 trim(char *s)
 {
@@ -38,8 +45,9 @@ parseInput(void *arg)
     int args_num = 0;
     FILE *output = stdout;
     struct function_args *fun_args = (struct function_args *) arg;
+    char *commandLine = fun_args->command;
 
-    char *command = strsep(&fun_args->command, ">");
+    char *command = strsep(&commandLine, ">");
     if (command == NULL || *command == '\0')
     {
         printError();
@@ -48,7 +56,7 @@ parseInput(void *arg)
 
     command = trim(command);
 
-    if (fun_args->command != NULL)
+    if (commandLine != NULL)
     {
         // contain white space in the middle or ">"
         regex_t reg;
@@ -58,7 +66,7 @@ parseInput(void *arg)
             regfree(&reg);
             return NULL;
         }
-        if (regexec(&reg, fun_args->command, 0, NULL, 0) == 0 || strstr(fun_args->command, ">") != NULL)
+        if (regexec(&reg, commandLine, 0, NULL, 0) == 0 || strstr(commandLine, ">") != NULL)
         {
             printError();
             regfree(&reg);
@@ -67,7 +75,7 @@ parseInput(void *arg)
 
         regfree(&reg);
 
-        if ((output = fopen(trim(fun_args->command), "w")) == NULL)
+        if ((output = fopen(trim(commandLine), "w")) == NULL)
         {
             printError();
             return NULL;
@@ -91,15 +99,14 @@ parseInput(void *arg)
 }
 
 int
-searchPath(char **path, char *firstArg)
+searchPath(char path[], char *firstArg)
 {
     // search executable file in path
     int i = 0;
     while (paths[i] != NULL)
     {
-        *path = strdup(paths[i]);
-        strcat(*path, "/");
-        if (access(strcat(*path, firstArg), X_OK) == 0)
+        snprintf(path, BUFF_SIZE, "%s/%s", paths[i], firstArg);
+        if (access(path, X_OK) == 0)
             return 0;
         i++;
     }
@@ -143,8 +150,7 @@ executeCommands(char *args[], int args_num, FILE *out)
             printError();
         else
         {
-            free(line);
-            fclose(in);
+            atexit(clean);
             exit(EXIT_SUCCESS);
         }
     }
@@ -153,7 +159,7 @@ executeCommands(char *args[], int args_num, FILE *out)
         if (args_num == 1 || args_num > 2)
             printError();
         else if (chdir(args[1]) == -1)
-            printError();  
+            printError();
     }
     else if (strcmp(args[0], "path") == 0)
     {
@@ -167,8 +173,8 @@ executeCommands(char *args[], int args_num, FILE *out)
     else
     {
         // not built-in commands
-        char *path = "";
-        if (searchPath(&path, args[0]) == 0)
+        char path[BUFF_SIZE];
+        if (searchPath(path, args[0]) == 0)
         {
             pid_t pid = fork();
             if (pid == -1)
@@ -222,7 +228,9 @@ main(int argc, char *argv[])
             if (line[nread - 1] == '\n')
                 line[nread - 1] = '\0';
 
-            while ((command = strsep(&line, "&")) != NULL)
+            char *temp = line;
+
+            while ((command = strsep(&temp, "&")) != NULL)
                 if (command[0] != '\0')
                 {
                     args[commands_num++].command = strdup(command);
@@ -235,13 +243,16 @@ main(int argc, char *argv[])
                     printError();
 
             for (size_t i = 0; i < commands_num; i++)
+            {
                 if (pthread_join(args[i].thread, NULL) != 0)
                     printError();
+                if (args[i].command != NULL)
+                    free(args[i].command);
+            }
         }
         else if (feof(in) != 0)
         {
-            free(line);
-            fclose(in);
+            atexit(clean);
             exit(EXIT_SUCCESS);    // EOF
         }
     }

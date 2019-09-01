@@ -22,7 +22,7 @@ void *
 parseInput(void *arg);
 
 int
-searchPath(char **path, char *firstArg);
+searchPath(char path[], char *firstArg);
 
 void
 redirect(FILE *out);
@@ -32,3 +32,6 @@ executeCommands(char *args[], int args_num, FILE *out);
 
 char *
 trim(char *);
+
+void
+clean(void);
