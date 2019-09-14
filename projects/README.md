@@ -10,6 +10,10 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 
 - [Reverse](./initial-reverse)
 
+### Processes and Scheduling
+
+* [Shell](./processes-shell)
+
 ## Kernel Hacking Projects (xv6)
 
 ### Initial Projects
