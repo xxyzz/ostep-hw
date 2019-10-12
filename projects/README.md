@@ -14,6 +14,10 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 
 * [Shell](./processes-shell)
 
+### Concurrency
+
+* [Web Server](./concurrency-webserver)
+
 ## Kernel Hacking Projects (xv6)
 
 ### Initial Projects
