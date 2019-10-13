@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
 	Buffer_t buffer[buffers];
 	Zem_init(&full, 0);
-	Zem_init(&empty, 1);
+	Zem_init(&empty, buffers);
 	Zem_init(&mutex, 1);
 	pthread_t threadsArr[threads];
 
