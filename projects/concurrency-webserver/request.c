@@ -6,8 +6,6 @@
 // Hopefully this is not a problem ... :)
 //
 
-#define MAXBUF (8192)
-
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
     char buf[MAXBUF], body[MAXBUF];
     
@@ -30,7 +28,7 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
     sprintf(buf, "Content-Type: text/html\r\n");
     write_or_die(fd, buf, strlen(buf));
     
-    sprintf(buf, "Content-Length: %lu\r\n\r\n", strlen(body));
+    sprintf(buf, "Content-Length: %zu\r\n\r\n", strlen(body));
     write_or_die(fd, buf, strlen(buf));
     
     // Write out the body last
@@ -43,10 +41,9 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
 void request_read_headers(int fd) {
     char buf[MAXBUF];
     
-    readline_or_die(fd, buf, MAXBUF);
-    while (strcmp(buf, "\r\n")) {
-	    readline_or_die(fd, buf, MAXBUF);
-    }
+    do {
+        readline_or_die(fd, buf, MAXBUF);
+    } while (strcmp(buf, "\r\n"));
     return;
 }
 
@@ -116,7 +113,7 @@ void request_serve_dynamic(int fd, char *filename, char *cgiargs) {
 
 void request_serve_static(int fd, char *filename, int filesize) {
     int srcfd;
-    char *srcp, filetype[MAXBUF], buf[MAXBUF];
+    char *srcp, filetype[MAXBUF / 10], buf[MAXBUF];
     
     request_get_filetype(filename, filetype);
     srcfd = open_or_die(filename, O_RDONLY, 0);
@@ -141,8 +138,8 @@ void request_serve_static(int fd, char *filename, int filesize) {
     munmap_or_die(srcp, filesize);
 }
 
-// handle a request
-void request_handle(int fd) {
+int
+pre_handle_request(int fd, Buffer_t *reqBuf) {
     int is_static;
     struct stat sbuf;
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
@@ -151,30 +148,40 @@ void request_handle(int fd) {
     readline_or_die(fd, buf, MAXBUF);
     sscanf(buf, "%s %s %s", method, uri, version);
     printf("method:%s uri:%s version:%s\n", method, uri, version);
-    
+
+    if (strstr(uri, "..")) {
+        request_error(fd, uri, "403", "Forbidden", "server could not read this file");
+        return Forbidden;
+    }
+
     // if (strcasecmp(method, "GET")) {
     //     request_error(fd, method, "501", "Not Implemented", "server does not implement this method");
     //     return;
     // }
     request_read_headers(fd);
-    
     is_static = request_parse_uri(uri, filename, cgiargs);
     if (stat(filename, &sbuf) < 0) {
         request_error(fd, filename, "404", "Not found", "server could not find this file");
-        return;
+        return NotFound;
     }
-    
+
     if (is_static) {
         if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
             request_error(fd, filename, "403", "Forbidden", "server could not read this file");
-            return;
+            return Forbidden;
         }
-        request_serve_static(fd, filename, sbuf.st_size);
     } else {
         if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
             request_error(fd, filename, "403", "Forbidden", "server could not run this CGI program");
-            return;
+            return Forbidden;
         }
-        request_serve_dynamic(fd, filename, cgiargs);
     }
+
+    reqBuf->fd = fd;
+    reqBuf->is_static = is_static;
+    reqBuf->size = sbuf.st_size;
+    strcpy(reqBuf->pathname, filename);
+    strcpy(reqBuf->cgiargs, cgiargs);
+
+    return OK;
 }

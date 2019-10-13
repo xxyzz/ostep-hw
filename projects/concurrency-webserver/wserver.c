@@ -12,9 +12,13 @@ workerThread (void * arg) {
 	while (1) {
 		Zem_wait(&full);
 		Zem_wait(&mutex);
-		int *buffer = (int *) arg;
-		request_handle(buffer[use]);
-		close_or_die(buffer[use]);
+		Buffer_t *reqBuf = (Buffer_t *) arg;
+		if (reqBuf[use].is_static) {
+			request_serve_static(reqBuf[use].fd, reqBuf[use].pathname, reqBuf[use].size);
+		} else {
+			request_serve_dynamic(reqBuf[use].fd, reqBuf[use].pathname, reqBuf[use].cgiargs);
+		}
+		close_or_die(reqBuf[use].fd);
 		use = (use + 1) % buffers;
 		Zem_post(&mutex);
 		Zem_post(&empty);
@@ -53,7 +57,7 @@ int main(int argc, char *argv[]) {
 				exit(1);
 		}
 
-	int buffer[buffers];
+	Buffer_t buffer[buffers];
 	Zem_init(&full, 0);
 	Zem_init(&empty, 1);
 	Zem_init(&mutex, 1);
@@ -73,8 +77,19 @@ int main(int argc, char *argv[]) {
 		Zem_wait(&empty);
 		Zem_wait(&mutex);
 		int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
-		buffer[fill] = conn_fd;
+		buffer[fill].fd = conn_fd;
+
+		if (pre_handle_request(conn_fd, &buffer[fill]) != OK) {
+			Zem_post(&mutex);
+			Zem_post(&empty);
+			continue;
+		}
+
 		fill = (fill + 1) % buffers;
+		// sort request by file size if the scheduling policy is SFF when the buffer is full
+		if (fill == 0 && strcmp(schedalg, "SFF") == 0) {
+
+		}
 		Zem_post(&mutex);
 		Zem_post(&full);
     }

@@ -32,13 +32,12 @@ int port;
 //
 void client_send(int fd, char *filename) {
     char buf[MAXBUF];
-    char hostname[MAXBUF];
+    char hostname[MAXBUF / 10];
     
     gethostname_or_die(hostname, MAXBUF);
     
     /* Form and send the HTTP request */
-    sprintf(buf, "GET %s HTTP/1.1\n", filename);
-    sprintf(buf, "%shost: %s\n\r\n", buf, hostname);
+    sprintf(buf, "GET %s HTTP/1.1\nhost: %s\n\r\n", filename, hostname);
     write_or_die(fd, buf, strlen(buf));
 }
 
@@ -97,7 +96,7 @@ int main(int argc, char *argv[]) {
     threads = atoi(argv[4]);
     pthread_t threadsArr[threads];
 
-    Pthread_create(&threadsArr[0], NULL, &send_request, "/spin.cgi?3");    
+    Pthread_create(&threadsArr[0], NULL, &send_request, "/spin.cgi?3");
 
     for (size_t i = 1; i < threads; i++)
         Pthread_create(&threadsArr[i], NULL, &send_request, filename);
