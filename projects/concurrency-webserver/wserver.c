@@ -87,9 +87,16 @@ int main(int argc, char *argv[]) {
 		}
 
 		fill = (fill + 1) % buffers;
-		// sort request by file size if the scheduling policy is SFF when the buffer is full
+		// sort requests by file size if the scheduling policy is SFF when the buffer is full
 		if (fill == 0 && strcmp(schedalg, "SFF") == 0) {
-
+			// insertion sort
+			for (int i = 0; i < buffers; i++) {
+				for (int j = i; j > 0 && buffer[j].size < buffer[j - 1].size; j--) {
+					Buffer_t temp = buffer[j];
+					buffer[j] = buffer[j-1];
+					buffer[j-1] = temp;
+				}
+			}
 		}
 		Zem_post(&mutex);
 		Zem_post(&full);

@@ -21,6 +21,7 @@
 
 #include "io_helper.h"
 #include "thread_helper.h"
+#include <stdlib.h>    // malloc
 
 #define MAXBUF (8192)
 
@@ -95,14 +96,23 @@ int main(int argc, char *argv[]) {
     filename = argv[3];
     threads = atoi(argv[4]);
     pthread_t threadsArr[threads];
+    char *filenames[threads - 1];
 
-    Pthread_create(&threadsArr[0], NULL, &send_request, "/spin.cgi?3");
+    Pthread_create(&threadsArr[0], NULL, &send_request, "/spin.cgi?1");
+    sleep(1);
+    for (size_t i = 0; i < threads - 1; i++) {
+        filenames[i] = malloc(MAXBUF);
+        sprintf(filenames[i], "%s%zu", filename, threads - 1 - i);
+    }
 
     for (size_t i = 1; i < threads; i++)
-        Pthread_create(&threadsArr[i], NULL, &send_request, filename);
+        Pthread_create(&threadsArr[i], NULL, &send_request, filenames[i - 1]);
 
     for (size_t i = 0; i < threads; i++)
         Pthread_join(threadsArr[i], NULL);
-    
+
+    for (size_t i = 0; i < threads - 1; i++)
+        free(filenames[i]);
+
     exit(0);
 }
