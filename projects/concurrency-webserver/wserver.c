@@ -13,14 +13,15 @@ workerThread (void * arg) {
 		Zem_wait(&full);
 		Zem_wait(&mutex);
 		Buffer_t *reqBuf = (Buffer_t *) arg;
-		if (reqBuf[use].is_static) {
-			request_serve_static(reqBuf[use].fd, reqBuf[use].pathname, reqBuf[use].size);
-		} else {
-			request_serve_dynamic(reqBuf[use].fd, reqBuf[use].pathname, reqBuf[use].cgiargs);
-		}
-		close_or_die(reqBuf[use].fd);
+		int useCopy = use;
 		use = (use + 1) % buffers;
 		Zem_post(&mutex);
+		if (reqBuf[useCopy].is_static) {
+			request_serve_static(reqBuf[useCopy].fd, reqBuf[useCopy].pathname, reqBuf[useCopy].size);
+		} else {
+			request_serve_dynamic(reqBuf[useCopy].fd, reqBuf[useCopy].pathname, reqBuf[useCopy].cgiargs);
+		}
+		close_or_die(reqBuf[useCopy].fd);
 		Zem_post(&empty);
 	}
 }
