@@ -2,10 +2,12 @@
 #include "request.h"
 #include "io_helper.h"
 #include "thread_helper.h"
+#include <limits.h>    // LLONG_MAX
 
 char default_root[] = ".", default_schedalg[] = "FIFO";
 Zem_t full, empty, mutex;
-int fill = 0, use = 0, buffers = 1;
+int use = 0, buffers = 1;
+char *schedalg = default_schedalg;
 
 void *
 workerThread (void * arg) {
@@ -14,7 +16,19 @@ workerThread (void * arg) {
 		Zem_wait(&mutex);
 		Buffer_t *reqBuf = (Buffer_t *) arg;
 		int useCopy = use;
-		use = (use + 1) % buffers;
+		if (strcmp(schedalg, "SFF") == 0) {
+			size_t i;
+			off_t min_size = LLONG_MAX;
+			for (i = 0; i < buffers; i++) {
+				if (!reqBuf[i].handling && reqBuf[i].fd && reqBuf[i].size < min_size) {
+					min_size = reqBuf[i].size;
+					useCopy = i;
+				}
+			}
+			reqBuf[useCopy].handling = 1;
+		} else {
+			use = (use + 1) % buffers;
+		}
 		Zem_post(&mutex);
 		if (reqBuf[useCopy].is_static) {
 			request_serve_static(reqBuf[useCopy].fd, reqBuf[useCopy].pathname, reqBuf[useCopy].size);
@@ -30,10 +44,9 @@ workerThread (void * arg) {
 // ./wserver [-d <basedir>] [-p <portnum>] [-t threads] [-b buffers] [-s schedalg]
 // 
 int main(int argc, char *argv[]) {
-    int c;
+    int c, fill;
     char *root_dir = default_root;
     int port = 10000, threads = 1;
-	char *schedalg = default_schedalg;
     
     while ((c = getopt(argc, argv, "d:p:t:b:s:")) != -1)
 		switch (c) {
@@ -76,9 +89,8 @@ int main(int argc, char *argv[]) {
 		struct sockaddr_in client_addr;
 		int client_len = sizeof(client_addr);
 		Zem_wait(&empty);
-		Zem_wait(&mutex);
 		int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
-		buffer[fill].fd = conn_fd;
+		Zem_wait(&mutex);
 
 		if (pre_handle_request(conn_fd, &buffer[fill]) != OK) {
 			Zem_post(&mutex);
@@ -87,17 +99,6 @@ int main(int argc, char *argv[]) {
 		}
 
 		fill = (fill + 1) % buffers;
-		// sort requests by file size if the scheduling policy is SFF when the buffer is full
-		if (fill == 0 && strcmp(schedalg, "SFF") == 0) {
-			// insertion sort
-			for (int i = 0; i < buffers; i++) {
-				for (int j = i; j > 0 && buffer[j].size < buffer[j - 1].size; j--) {
-					Buffer_t temp = buffer[j];
-					buffer[j] = buffer[j-1];
-					buffer[j-1] = temp;
-				}
-			}
-		}
 		Zem_post(&mutex);
 		Zem_post(&full);
     }

@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
     char *filenames[threads - 1];
 
     Pthread_create(&threadsArr[0], NULL, &send_request, "/spin.cgi?1");
-    sleep(1);
     for (size_t i = 0; i < threads - 1; i++) {
         filenames[i] = malloc(MAXBUF);
         sprintf(filenames[i], "%s%zu", filename, threads - 1 - i);

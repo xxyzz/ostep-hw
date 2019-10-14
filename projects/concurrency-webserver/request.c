@@ -180,6 +180,7 @@ pre_handle_request(int fd, Buffer_t *reqBuf) {
     reqBuf->fd = fd;
     reqBuf->is_static = is_static;
     reqBuf->size = sbuf.st_size;
+    reqBuf->handling = 0;
     strcpy(reqBuf->pathname, filename);
     strcpy(reqBuf->cgiargs, cgiargs);
 

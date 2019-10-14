@@ -14,6 +14,7 @@ typedef struct __Buffer_t {
 	off_t size;
 	char pathname[MAXBUF];
 	char cgiargs[MAXBUF];
+	int handling;
 } Buffer_t;
 
 void request_handle(int fd);
