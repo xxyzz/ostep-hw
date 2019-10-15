@@ -5,7 +5,8 @@
 enum result {
     OK,
     NotFound,
-    Forbidden
+    Forbidden,
+	Error
 };
 
 typedef struct __Buffer_t {
@@ -17,10 +18,8 @@ typedef struct __Buffer_t {
 	int handling;
 } Buffer_t;
 
-void request_handle(int fd);
 int pre_handle_request(int fd, Buffer_t *reqBuf);
-void request_serve_dynamic(int fd, char *filename, char *cgiargs);
-void request_serve_static(int fd, char *filename, int filesize);
-
+int request_serve_dynamic(int fd, char *filename, char *cgiargs);
+int request_serve_static(int fd, char *filename, int filesize);
 
 #endif // __REQUEST_H__

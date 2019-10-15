@@ -35,7 +35,7 @@ workerThread (void * arg) {
 		} else {
 			request_serve_dynamic(reqBuf[useCopy].fd, reqBuf[useCopy].pathname, reqBuf[useCopy].cgiargs);
 		}
-		close_or_die(reqBuf[useCopy].fd);
+		close(reqBuf[useCopy].fd);
 		Zem_post(&empty);
 	}
 }
@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
 		struct sockaddr_in client_addr;
 		int client_len = sizeof(client_addr);
 		Zem_wait(&empty);
-		int conn_fd = accept_or_die(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
+		int conn_fd = accept(listen_fd, (sockaddr_t *) &client_addr, (socklen_t *) &client_len);
+		if (conn_fd == -1) {
+			Zem_post(&empty);
+			continue;
+		}
 		Zem_wait(&mutex);
 
 		if (pre_handle_request(conn_fd, &buffer[fill]) != OK) {
