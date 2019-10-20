@@ -90,10 +90,15 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  ptable.pstat.inuse[p->pid] = 1;
-  ptable.pstat.tickets[p->pid] = 1;
-  ptable.pstat.pid[p->pid] = p->pid;
-  ptable.pstat.ticks[p->pid] = 0;
+  for (int i = 0; i < NPROC; i++) {
+    if (!ptable.pstat.inuse[i]) {
+      ptable.pstat.inuse[i] = 1;
+      ptable.pstat.tickets[i] = 1;
+      ptable.pstat.pid[i] = p->pid;
+      ptable.pstat.ticks[i] = 0;
+      break;
+    }
+  }
 
   release(&ptable.lock);
 
@@ -205,7 +210,19 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
-  ptable.pstat.tickets[np->pid] = ptable.pstat.tickets[curproc->pid];
+
+  // child inherits tickets from parent.
+  for (int i = 0; i < NPROC; i++) {
+    if (ptable.pstat.pid[i] == curproc->pid) {
+      for (int j = 0; j < NPROC; i++) {
+        if (ptable.pstat.pid[j] == np->pid) {
+          ptable.pstat.tickets[j] = ptable.pstat.tickets[i];
+          break;
+        }
+      } 
+      break;
+    }
+  }
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -270,7 +287,13 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
-  ptable.pstat.inuse[curproc->pid] = 0;
+  for (int i = 0; i < NPROC; i++) {
+    if (ptable.pstat.pid[i] == curproc->pid) {
+      ptable.pstat.inuse[i] = 0;
+      break;
+    }
+  }
+  
   sched();
   panic("zombie exit");
 }
@@ -381,19 +404,32 @@ scheduler(void)
 
     // counter: used to track if we’ve found the winner yet
     int counter = 0;
-
     int totaltickets = 0;
-    for (int i = 0; i < NPROC; i++)
-      totaltickets += ptable.pstat.tickets[i];
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->state == RUNNABLE) {
+        for (int i = 0; i < NPROC; i++) {
+          if (ptable.pstat.pid[i] == p->pid) {
+            totaltickets += ptable.pstat.tickets[i];
+            break;
+          }
+        }
+      }
+    }
 
     int winner = getwinner(totaltickets);
 
-    for (int i = 0; i < NPROC; i++) {
-      p = &ptable.proc[NPROC];
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
 
-      counter += ptable.pstat.tickets[i];
+      int i;
+      for (i = 0; i < NPROC; i++) {
+        if (ptable.pstat.pid[i] == p->pid) {
+          counter += ptable.pstat.tickets[i];
+          break;
+        }
+      }
+
       if (counter <= winner)
         continue;
 
@@ -405,8 +441,6 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      ptable.pstat.inuse[i] = 1;
-      ptable.pstat.pid[i] = p->pid;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -415,7 +449,7 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
       ptable.pstat.ticks[i] += ticks - ticks0;
-      cprintf("XV6_TEST_OUTPUT pid: %d, tickets:%d, ticks: %d\n", p->pid, ptable.pstat.tickets[i], ptable.pstat.ticks[i]);
+      // cprintf("XV6_TEST_OUTPUT pid: %d, tickets:%d, ticks: %d\n", p->pid, ptable.pstat.tickets[i], ptable.pstat.ticks[i]);
     }
     release(&ptable.lock);
   }
@@ -603,8 +637,13 @@ procdump(void)
 int
 settickets(int number)
 {
-  ptable.pstat.tickets[myproc()->pid] = number;
-  return 0;
+  for (int i = 0; i < NPROC; i++) {
+    if (ptable.pstat.pid[i] == myproc()->pid) {
+      ptable.pstat.tickets[i] = number;
+      return 0;
+    }
+  }
+  return -1;
 }
 
 int
