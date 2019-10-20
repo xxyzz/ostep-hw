@@ -214,7 +214,7 @@ fork(void)
   // child inherits tickets from parent.
   for (int i = 0; i < NPROC; i++) {
     if (ptable.pstat.pid[i] == curproc->pid) {
-      for (int j = 0; j < NPROC; i++) {
+      for (int j = 0; j < NPROC; j++) {
         if (ptable.pstat.pid[j] == np->pid) {
           ptable.pstat.tickets[j] = ptable.pstat.tickets[i];
           break;
@@ -643,6 +643,7 @@ settickets(int number)
       return 0;
     }
   }
+
   return -1;
 }
 
