@@ -202,8 +202,9 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
-  // child inherits tickets from parent.
+  // child inherits tickets and ticks from parent.
   np->tickets = curproc->tickets;
+  // np->ticks = curproc->ticks;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -333,7 +334,7 @@ random()
 // https://stackoverflow.com/questions/2509679/how-to-generate-a-random-integer-number-from-within-a-range
 // assumes 0 <= totaltickets <= RAND_MAX
 // returns in the closed interval [0, totaltickets]
-int
+long
 getwinner(int totaltickets)
 {
   unsigned long
@@ -351,7 +352,7 @@ getwinner(int totaltickets)
   while (num_rand - defect <= (unsigned long)x);
 
   // Truncated division is intentional
-  return (int) x/bin_size;
+  return x/bin_size;
 }
 
 //PAGEBREAK: 42
@@ -384,7 +385,7 @@ scheduler(void)
         totaltickets += p->tickets;
     }
 
-    int winner = getwinner(totaltickets);
+    long winner = getwinner(totaltickets);
 
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
@@ -409,8 +410,10 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
-      p->ticks += ticks - ticks0;
-      // cprintf("XV6_TEST_OUTPUT pid: %d, tickets:%d, ticks: %d\n", p->pid, ptable.pstat.tickets[i], ptable.pstat.ticks[i]);
+      p->ticks += (ticks - ticks0);
+      if (p->tickets > 1)
+        cprintf("XV6_TEST_OUTPUT pid: %d, parent: %d, tickets:%d, ticks: %d\n",
+          p->pid, p->parent->pid, p->tickets, p->ticks);
     }
     release(&ptable.lock);
   }
