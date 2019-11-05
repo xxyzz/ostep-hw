@@ -8,17 +8,17 @@ main(int argc, char *argv[]) {
 
     if (rc1 == 0) {
         settickets(30);
-        sleep(100);
+        sleep(50);
     } else if (rc1 > 0) {
         int rc2 = fork();
         if (rc2 == 0) {
             settickets(20);
-            sleep(100);
+            sleep(50);
         } else if (rc2 > 0) {
             int rc3 = fork();
             if (rc3 == 0) {
                 settickets(10);
-                sleep(100);
+                sleep(50);
             }
         }
     }

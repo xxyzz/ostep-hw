@@ -202,9 +202,8 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
-  // child inherits tickets and ticks from parent.
+  // child inherits tickets from parent.
   np->tickets = curproc->tickets;
-  // np->ticks = curproc->ticks;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
