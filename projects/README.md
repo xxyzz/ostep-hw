@@ -23,3 +23,7 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 ### Initial Projects
 
 - [Intro To xv6](./initial-xv6)
+
+### Processes and Scheduling
+
+- [Scheduling (Lottery)](./scheduling-xv6-lottery)

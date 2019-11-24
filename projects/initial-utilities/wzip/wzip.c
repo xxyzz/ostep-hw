@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>    // exit
 #include <string.h>
+#include <arpa/inet.h> // htonl
+
+// Littleendian and Bigendian byte order illustrated
+// https://dflund.se/~pi/endian.html
 
 void
 writeFile(int count, char *oldBuff)
 {
+    count = htonl(count);    // write as network byte order
     fwrite(&count, 4, 1, stdout);
     fwrite(oldBuff, 1, 1, stdout);
 }
