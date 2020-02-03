@@ -42,9 +42,9 @@ main(int argc, char *argv[])
                 strcpy(oldBuff, buff);
             }
         }
+        fclose(fp);
     }
     writeFile(count, oldBuff);
-    fclose(fp);
 
     return 0;
 }

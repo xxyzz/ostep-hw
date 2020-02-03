@@ -29,9 +29,8 @@ main(int argc, char *argv[])
                 printf("%s", buff);
             }
         }
+        fclose(fp);
     }
-
-    fclose(fp);
 
     return 0;
 }
