@@ -3,6 +3,9 @@
 #include <pthread.h>
 // From APUE chapter 11.6.4
 
+#define handle_error(msg) \
+    do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
 struct job {
     struct job *j_next;
     struct job *j_prev;
@@ -10,13 +13,25 @@ struct job {
 	int chunk_size;
 	int offset;
 	char *addr;
-	char *result;
+	struct result_queue *r_queue;
 };
 
 struct queue {
     struct job *q_head;
     struct job *q_tail;
     pthread_rwlock_t q_lock;
+};
+
+struct result_queue {
+	struct result *q_head;
+    struct result *q_tail;
+};
+
+struct result {
+	int count;
+	char character;
+	struct result *next;
+	struct result *prev;
 };
 
 /*
@@ -45,6 +60,10 @@ job_insert(struct queue *qp, struct job *jp)
 	pthread_rwlock_wrlock(&qp->q_lock);
 	jp->j_next = qp->q_head;
 	jp->j_prev = NULL;
+	struct result_queue r_queue;
+	r_queue.q_head = NULL;
+	r_queue.q_tail = NULL;
+	jp->r_queue = &r_queue;
 	if (qp->q_head != NULL)
 		qp->q_head->j_prev = jp;
 	else
@@ -62,6 +81,10 @@ job_append(struct queue *qp, struct job *jp)
 	pthread_rwlock_wrlock(&qp->q_lock);
 	jp->j_next = NULL;
 	jp->j_prev = qp->q_tail;
+	struct result_queue r_queue;
+	r_queue.q_head = NULL;
+	r_queue.q_tail = NULL;
+	jp->r_queue = &r_queue;
 	if (qp->q_tail != NULL)
 		qp->q_tail->j_next = jp;
 	else
@@ -110,6 +133,45 @@ job_find(struct queue *qp, pthread_t id)
 
 	pthread_rwlock_unlock(&qp->q_lock);
 	return(jp);
+}
+
+int
+check_job_done(struct queue *qp)
+{
+	struct job *jp;
+
+	if (pthread_rwlock_rdlock(&qp->q_lock) != 0)
+		return -1;
+
+	for (jp = qp->q_head; jp != NULL; jp = jp->j_next) {
+		if (jp->j_id != NULL) {
+			pthread_rwlock_unlock(&qp->q_lock);
+			return 0;
+		}
+	}
+
+	pthread_rwlock_unlock(&qp->q_lock);
+	return 1;
+}
+
+void
+append_result(struct result_queue *qp, int count, char character)
+{
+    struct result *new_result = malloc(sizeof *new_result);
+    if (new_result == NULL)
+        handle_error("malloc");
+    new_result->character = character;
+    new_result->count = count;
+	new_result->next = NULL;
+    if (qp->q_head == NULL) {
+		new_result->prev = NULL;
+        qp->q_head = new_result;
+        qp->q_tail = new_result;
+    } else {
+        new_result->prev = qp->q_tail;
+        qp->q_tail->next = new_result;
+        qp->q_tail = new_result;
+    }
 }
 
 #endif

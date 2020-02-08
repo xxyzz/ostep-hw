@@ -6,6 +6,7 @@
 
 #define Pthread_create(thread, attr, start_routine, arg) assert(pthread_create(thread, attr, start_routine, arg) == 0);
 #define Pthread_join(thread, value_ptr)                  assert(pthread_join(thread, value_ptr) == 0);
+#define Pthread_cancel(thread)                           assert(pthread_cancel(thread) == 0);
 
 void Mutex_init(pthread_mutex_t *m) {
     assert(pthread_mutex_init(m, NULL) == 0);
