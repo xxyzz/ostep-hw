@@ -6,9 +6,9 @@
 
 ## Requirements
 
-- Linux/Unix
+- Unix-like operating system
 
-- [GCC](https://gcc.gnu.org/), [GDB](https://www.gnu.org/software/gdb/)/[LLDB](https://lldb.llvm.org/), [Valgrind](http://valgrind.org/)
+- [Clang](https://clang.llvm.org/)/[GCC](https://gcc.gnu.org/), [LLDB](https://lldb.llvm.org/)/[GDB](https://www.gnu.org/software/gdb/), [Valgrind](http://valgrind.org/)
 
 - Python 2: run simulations from the book
 

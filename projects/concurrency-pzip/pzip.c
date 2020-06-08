@@ -1,158 +1,250 @@
-#include <stdio.h>
-#include <stdlib.h>    // exit
-#include <string.h>    // mmecpy
-#include <arpa/inet.h> // htonl
-#include <unistd.h>    // sysconf
-#include <pthread.h>
-#include <sys/mman.h>  // mmap
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "thread_helper.h"
-#include "rwlock.h"
+#include <arpa/inet.h> // htonl
+#include <fcntl.h>     // open, O_* constants
+#include <stdio.h>     // fwrite, fprintf
+#include <stdlib.h>    // exit, malloc
+#include <sys/fcntl.h>
+#include <sys/mman.h> // mmap, munmap
+#include <sys/stat.h> // fstat, mode constants
+#include <sys/types.h>
+#include <unistd.h> // sysconf, close
 
-void *
-compress(void *arg)
-{
-    struct queue *job_queue = (struct queue *) arg;
-    pthread_t tid = pthread_self();
-    struct job *jp = NULL;
-    while (1) {
-        do {
-            jp = job_find(job_queue, tid);
-        } while (jp == NULL);
+// http://www.catb.org/esr/structure-packing/
+// https://en.wikipedia.org/wiki/Data_structure_alignment
+typedef struct result {
+  struct result *next;
+  int count;
+  char character;
+  char pad[sizeof(struct result *) - sizeof(int) - 1];
+} Result;
 
-        char oldBuff;
-        int count = 0;
-        for (size_t i = 0; i < jp->chunk_size; i++) {
-            char character = jp->addr[i];
-            if (character == oldBuff) {
-                count++;
-            } else {
-                if (oldBuff != '\0')
-                    append_result(jp->r_queue, count, oldBuff);
-                count = 1;
-                oldBuff = character;
-            }
+typedef struct work {
+  long long chunk_size;
+  char *addr;
+  Result *results;
+} Work;
+
+typedef struct files {
+  int fd;
+  char pad[sizeof(off_t) - sizeof(int)];
+  off_t size;
+} Files;
+
+static long long use_ptr = 0, fill_ptr = 0, chunks = 0;
+static sem_t mutex, empty, full;
+
+static void *compress(void *arg) {
+  Work *works = (Work *)arg;
+
+  while (1) {
+    // use semaphore instead of mutex and condition variables
+    // because workers will wait for the mutex and
+    // pthread_mutex_lock() is not a cancellation point,
+    // therefore the main thread can't join the workers
+    Sem_wait(&full);
+    Sem_wait(&mutex);
+
+    // get work
+    Work *current_work = &works[use_ptr];
+    use_ptr = (use_ptr + 1) % chunks;
+
+    // do work
+    Result *head = NULL;
+    Result *previous_result = NULL;
+    char oldBuff = '\0';
+    int character_count = 0;
+    for (long long i = 0; i < current_work->chunk_size; i++) {
+      char character = current_work->addr[i];
+      if (character == oldBuff) {
+        character_count++;
+      } else {
+        if (oldBuff != '\0') {
+          Result *current_result = malloc(sizeof(Result));
+          if (current_result == NULL)
+            handle_error("malloc");
+          current_result->count = character_count;
+          current_result->character = oldBuff;
+          current_result->next = NULL;
+          if (previous_result != NULL)
+            previous_result->next = current_result;
+          previous_result = current_result;
+          if (head == NULL)
+            head = previous_result;
         }
-        if (jp->r_queue->q_head == NULL && count > 0)
-            append_result(jp->r_queue, count, oldBuff);    // same characters
-        jp->j_id = NULL;
+        character_count = 1;
+        oldBuff = character;
+      }
     }
+    if (head == NULL) {
+      // same characters
+      current_work->results = malloc(sizeof(Result));
+      if (current_work->results == NULL)
+        handle_error("malloc");
+      current_work->results->character = oldBuff;
+      current_work->results->count = character_count;
+      current_work->results->next = NULL;
+    } else {
+      current_work->results = head;
+    }
+
+    Sem_post(&mutex);
+    Sem_post(&empty);
+  }
 }
 
 // Littleendian and Bigendian byte order illustrated
 // https://dflund.se/~pi/endian.html
-void
-writeFile(int count, char *oldBuff)
-{
-    count = htonl(count);    // write as network byte order
-    fwrite(&count, 4, 1, stdout);
-    fwrite(oldBuff, 1, 1, stdout);
+static void writeFile(int character_count, char *oldBuff) {
+  // character_count = htonl(character_count);    // write as network byte order
+  fwrite(&character_count, sizeof(int), 1, stdout);
+  fwrite(oldBuff, sizeof(char), 1, stdout);
 }
 
-void
-writeResult(struct result *result)
-{
+int main(int argc, char *argv[]) {
+  long page_size = sysconf(_SC_PAGE_SIZE);
+
+  if (argc <= 1) {
+    fprintf(stderr, "pzip: file1 [file2 ...]\n");
+    exit(EXIT_FAILURE);
+  }
+
+  // get_nprocs is GNU extension
+  long np = sysconf(_SC_NPROCESSORS_ONLN);
+  pthread_t *threads = malloc(sizeof(pthread_t) * (unsigned long)np);
+  if (threads == NULL)
+    handle_error("malloc");
+
+  Files *files = malloc(sizeof(Files) * (unsigned long)(argc - 1));
+  if (files == NULL)
+    handle_error("malloc");
+
+  // count chunks number
+  for (int i = 1; i < argc; i++) {
+    int fd = open(argv[i], O_RDONLY);
+    struct stat sb;
+    if (fd == -1)
+      handle_error("open");
+
+    if (fstat(fd, &sb) == -1)
+      handle_error("stat");
+
+    files[i - 1].fd = fd;
+    files[i - 1].size = sb.st_size;
+
+    chunks += (sb.st_size / page_size + 1);
+  }
+
+  // init semaphores
+  Sem_init(&mutex, 0, 1);
+  Sem_init(&empty, 0, (unsigned int)chunks);
+  Sem_init(&full, 0, 0);
+
+  Work *works = malloc(sizeof(Work) * (unsigned long)chunks);
+  if (works == NULL)
+    handle_error("malloc");
+
+  // create workers
+  for (long i = 0; i < np; i++)
+    Pthread_create(&threads[i], NULL, compress, works);
+
+  // create jobs
+  for (int i = 0; i < argc - 1; i++) {
+    long long offset = 0;
+    while (offset < files[i].size) {
+      Sem_wait(&empty);
+      Sem_wait(&mutex);
+
+      works[fill_ptr].chunk_size = page_size;
+      if (offset + page_size > files[i].size)
+        works[fill_ptr].chunk_size = files[i].size - offset;
+
+      char *addr = mmap(NULL, (size_t)works[fill_ptr].chunk_size, PROT_READ,
+                        MAP_PRIVATE, files[i].fd, offset);
+      if (addr == MAP_FAILED)
+        handle_error("mmap");
+
+      works[fill_ptr].addr = addr;
+      works[fill_ptr].results = NULL;
+      offset += page_size;
+      fill_ptr = (fill_ptr + 1) % chunks;
+
+      Sem_post(&mutex);
+      Sem_post(&full);
+    }
+    close(files[i].fd);
+  }
+
+  // check jobs are done
+  Sem_wait(&empty);
+  Sem_wait(&mutex);
+
+  // kill and wait workers
+  for (long i = 0; i < np; i++) {
+    Pthread_cancel(threads[i]);
+    Pthread_join(threads[i], NULL);
+  }
+
+  // final compress
+  int last_count = 0;
+  char last_character = '\0';
+  for (long long i = 0; i < chunks; i++) {
+    Result *result;
+    result = works[i].results;
     while (result != NULL) {
-        int count = htonl(result->count);
-        fwrite(&count, 4, 1, stdout);
-        fwrite(&result->character, 1, 1, stdout);
-        result = result->next;
-    }
-}
-
-int
-main(int argc, char *argv[])
-{
-    off_t page_size = sysconf(_SC_PAGE_SIZE);
-    struct queue job_queue;
-
-    if (argc <= 1) {
-        fprintf(stderr, "pzip: file1 [file2 ...]\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // get_nprocs is GNU extension
-    int np = sysconf(_SC_NPROCESSORS_ONLN);
-    pthread_t threads[np];
-
-    // create workers
-    for (size_t i = 0; i < np; i++)
-        Pthread_create(&threads[i], NULL, &compress, &job_queue);
-
-    // create jobs
-    queue_init(&job_queue);
-
-    for (size_t i = 1; i < argc; i++) {
-        int fd = open(argv[i], O_RDONLY);
-        struct stat sb;
-        if (fd == -1)
-            handle_error("open");
-
-        if (fstat(fd, &sb) == -1)
-            handle_error("stat");
-
-        int offset = 0;
-        int worker = 0;
-        while (offset < sb.st_size) {
-            struct job new_job;
-            new_job.j_id = threads[worker++];
-            if (worker >= np)
-                worker = 0;
-            new_job.offset = offset;
-            new_job.chunk_size = page_size;
-
-            offset += page_size;
-            if (offset > sb.st_size)
-               new_job.chunk_size = sb.st_size - offset + page_size;
-            
-            char *addr = mmap(NULL, new_job.chunk_size, PROT_READ, MAP_PRIVATE, fd, new_job.offset);
-            if (addr == MAP_FAILED)
-                handle_error("mmap");
-
-            new_job.addr = addr;
-            job_append(&job_queue, &new_job);
+      if (result == works[i].results &&
+          result->next != NULL) { // first but not last result
+        if (result->character == last_character) {
+          writeFile(result->count + last_count, &result->character);
+        } else {
+          if (last_count > 0)
+            writeFile(last_count, &last_character);
+          writeFile(result->count, &result->character);
         }
-        
-        close(fd);
-    }
-
-    // check jobs are done
-    while (1) {
-        if (check_job_done(&job_queue) == 0)
-            continue;
-
-        // kill workers
-        for (size_t i = 0; i < np; i++)
-            Pthread_cancel(threads[i]);
-        
-        // collect results
-        pthread_rwlock_rdlock(&job_queue.q_lock);
-        struct job *jp;
-        int last_count;
-        char last_character;
-        struct result_queue *last_result;
-        for (jp = job_queue.q_head; jp != NULL; jp = jp->j_next) {
-            int count = jp->r_queue->q_head->count;
-            char first_character = jp->r_queue->q_head->character;
-            if (last_character == first_character) {
-                last_result->q_tail->prev->next = last_result->q_tail;
-                jp->r_queue->q_head = jp->r_queue->q_head->next;
-                writeResult(last_result->q_head);
-                writeFile(count + last_count, &last_character);
+      } else if (result->next == NULL) {  // last result
+        if (result != works[i].results) { // not first
+          if (i == chunks - 1) {          // last chunk
+            writeFile(result->count, &result->character);
+          } else { // not last chunk
+            last_character = result->character;
+            last_count = result->count;
+          }
+        } else {                                     // first result
+          if (result->character == last_character) { // same
+            if (i != chunks - 1) {                   // not last chunk
+              last_count += result->count;
             } else {
-                writeResult(last_result->q_head);
+              writeFile(result->count + last_count, &result->character);
             }
-            last_count = jp->r_queue->q_tail->count;
-            last_character = jp->r_queue->q_tail->character;
-            last_result = jp->r_queue;
+          } else { // not same
+            if (last_count > 0)
+              writeFile(last_count, &last_character);
+            if (i != chunks - 1) {
+              last_character = result->character;
+              last_count = result->count;
+            } else {
+              writeFile(result->count, &result->character);
+            }
+          }
         }
-        writeResult(last_result->q_head);
-        pthread_rwlock_unlock(&job_queue.q_lock);
-        pthread_rwlock_destroy(&job_queue.q_lock);
-        break;
-    }
+      } else {
+        writeFile(result->count, &result->character);
+      }
 
-    return 0;
+      Result *tmp = result;
+      result = result->next;
+      free(tmp);
+    }
+    if (munmap(works[i].addr, (size_t)works[i].chunk_size) != 0)
+      handle_error("munmap");
+  }
+  Sem_post(&mutex);
+
+  free(threads);
+  free(files);
+  free(works);
+  Sem_destroy(&mutex);
+  Sem_destroy(&full);
+  Sem_destroy(&empty);
+
+  return 0;
 }

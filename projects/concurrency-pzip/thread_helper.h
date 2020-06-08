@@ -1,67 +1,45 @@
 #ifndef _thread_helper_h
 #define _thread_helper_h
 
-#include <pthread.h>
 #include <assert.h>
+#include <pthread.h>
+#include <semaphore.h>
 
-#define Pthread_create(thread, attr, start_routine, arg) assert(pthread_create(thread, attr, start_routine, arg) == 0);
-#define Pthread_join(thread, value_ptr)                  assert(pthread_join(thread, value_ptr) == 0);
-#define Pthread_cancel(thread)                           assert(pthread_cancel(thread) == 0);
+#define handle_error(msg)                                                      \
+  do {                                                                         \
+    perror(msg);                                                               \
+    exit(EXIT_FAILURE);                                                        \
+  } while (0)
 
-void Mutex_init(pthread_mutex_t *m) {
-    assert(pthread_mutex_init(m, NULL) == 0);
-}
-
-void Mutex_lock(pthread_mutex_t *m) {
-    int rc = pthread_mutex_lock(m);
-    assert(rc == 0);
-}
-
-void Mutex_unlock(pthread_mutex_t *m) {
-    int rc = pthread_mutex_unlock(m);
-    assert(rc == 0);
-}
-
-void Cond_init(pthread_cond_t *c) {
-    assert(pthread_cond_init(c, NULL) == 0);
-}
-
-void Cond_wait(pthread_cond_t *c, pthread_mutex_t *m) {
-    int rc = pthread_cond_wait(c, m);
-    assert(rc == 0);
-}
-
-void Cond_signal(pthread_cond_t *c) {
-    int rc = pthread_cond_signal(c);
-    assert(rc == 0);
-}
-
-typedef struct __Zem_t {
-    int value;
-    pthread_cond_t cond;
-    pthread_mutex_t lock;
-} Zem_t;
-
-// only one thread can call this
-void Zem_init(Zem_t *s, int value) {
-    s->value = value;
-    Cond_init(&s->cond);
-    Mutex_init(&s->lock);
-}
-
-void Zem_wait(Zem_t *s) {
-    Mutex_lock(&s->lock);
-    while (s->value <= 0)
-        Cond_wait(&s->cond, &s->lock);
-    s->value--;
-    Mutex_unlock(&s->lock);
-}
-
-void Zem_post(Zem_t *s) {
-    Mutex_lock(&s->lock);
-    s->value++;
-    Cond_signal(&s->cond);
-    Mutex_unlock(&s->lock);
-}
+#define Pthread_create(thread, attr, start_routine, arg)                       \
+  assert(pthread_create(thread, attr, start_routine, arg) == 0)
+#define Pthread_join(thread, value_ptr)                                        \
+  assert(pthread_join(thread, value_ptr) == 0)
+#define Pthread_cancel(thread) assert(pthread_cancel(thread) == 0)
+#define Pthread_mutex_init(m, attr) assert(pthread_mutex_init(m, attr) == 0)
+#define Pthread_mutex_lock(m) assert(pthread_mutex_lock(m) == 0)
+#define Pthread_mutex_unlock(m) assert(pthread_mutex_unlock(m) == 0)
+#define Pthread_mutex_destroy(m) assert(pthread_mutex_destroy(m) == 0)
+#define Pthread_cond_init(cond, attr) assert(pthread_cond_init(cond, attr) == 0)
+#define Pthread_cond_signal(cond) assert(pthread_cond_signal(cond) == 0)
+#define Pthread_cond_wait(cond, mutex)                                         \
+  assert(pthread_cond_wait(cond, mutex) == 0)
+#define Pthread_cond_destroy(cond) assert(pthread_cond_destroy(cond) == 0)
+#define Pthread_setcancelstate(state, oldstate)                                \
+  assert(pthread_setcancelstate(state, oldstate) == 0)
+#define Pthread_setcanceltype(type, oldtype)                                   \
+  assert(pthread_setcanceltype(type, oldtype) == 0)
+#define Mutex_init(m) assert(pthread_mutex_init(m, NULL) == 0)
+#define Mutex_lock(m) assert(pthread_mutex_lock(m) == 0)
+#define Mutex_unlock(m) assert(pthread_mutex_unlock(m) == 0)
+#define Cond_init(cond) assert(pthread_cond_init(cond, NULL) == 0)
+#define Cond_signal(cond) assert(pthread_cond_signal(cond) == 0)
+#define Cond_wait(cond, mutex) assert(pthread_cond_wait(cond, mutex) == 0)
+#define Sem_init(sem, pshared, value) assert(sem_init(sem, pshared, value) == 0)
+#define Sem_wait(sem) assert(sem_wait(sem) == 0)
+#define Sem_post(sem) assert(sem_post(sem) == 0)
+#define Sem_destroy(sem) assert(sem_destroy(sem) == 0)
+#define Sem_close(sem) assert(sem_close(sem) == 0)
+#define Sem_unlink(name) assert(sem_unlink(name) == 0)
 
 #endif // _thread_helper_h
