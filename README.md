@@ -109,3 +109,7 @@ C/Linux Projects and Kernel Hacking Projects (xv6)
 49. [Sun’s Network File System (NFS)](./49)
 
 50. [The Andrew File System (AFS)](./50)
+
+## License
+
+This work is licensed under the GPLv3 or any later version.

@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   long page_size = sysconf(_SC_PAGE_SIZE);
 
   if (argc <= 1) {
-    fprintf(stderr, "pzip: file1 [file2 ...]\n");
+    fprintf(stdout, "pzip: file1 [file2 ...]\n");
     exit(EXIT_FAILURE);
   }
 
@@ -136,7 +136,9 @@ int main(int argc, char *argv[]) {
 
   // init semaphores
   Sem_init(&mutex, 0, 1);
-  Sem_init(&empty, 0, (unsigned int)chunks);
+  // set empty to 1 to prevent main thread cancel
+  // workers before they do the work
+  Sem_init(&empty, 0, 1);
   Sem_init(&full, 0, 0);
 
   Work *works = malloc(sizeof(Work) * (unsigned long)chunks);
