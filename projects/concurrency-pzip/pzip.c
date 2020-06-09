@@ -33,6 +33,16 @@ typedef struct files {
 static long long use_ptr = 0, fill_ptr = 0, chunks = 0;
 static sem_t mutex, empty, full;
 
+static Result *create_result(int count, char character) {
+  Result *result = malloc(sizeof(Result));
+  if (result == NULL)
+    handle_error("malloc");
+  result->count = count;
+  result->character = character;
+  result->next = NULL;
+  return result;
+}
+
 static void *compress(void *arg) {
   Work *works = (Work *)arg;
 
@@ -51,40 +61,32 @@ static void *compress(void *arg) {
     // do work
     Result *head = NULL;
     Result *previous_result = NULL;
-    char oldBuff = '\0';
-    int character_count = 0;
+    char previous_character = '\0';
+    int previous_count = 0;
     for (long long i = 0; i < current_work->chunk_size; i++) {
       char character = current_work->addr[i];
-      if (character == oldBuff) {
-        character_count++;
+      if (character == previous_character) {
+        previous_count++;
       } else {
-        if (oldBuff != '\0') {
-          Result *current_result = malloc(sizeof(Result));
-          if (current_result == NULL)
-            handle_error("malloc");
-          current_result->count = character_count;
-          current_result->character = oldBuff;
-          current_result->next = NULL;
+        if (previous_count != 0) {
+          Result *last_result =
+              create_result(previous_count, previous_character);
           if (previous_result != NULL)
-            previous_result->next = current_result;
-          previous_result = current_result;
+            previous_result->next = last_result;
+          previous_result = last_result;
           if (head == NULL)
             head = previous_result;
         }
-        character_count = 1;
-        oldBuff = character;
+        previous_count = 1;
+        previous_character = character;
       }
     }
     if (head == NULL) {
       // same characters
-      current_work->results = malloc(sizeof(Result));
-      if (current_work->results == NULL)
-        handle_error("malloc");
-      current_work->results->character = oldBuff;
-      current_work->results->count = character_count;
-      current_work->results->next = NULL;
+      current_work->results = create_result(previous_count, previous_character);
     } else {
       current_work->results = head;
+      previous_result->next = create_result(previous_count, previous_character);
     }
 
     Sem_post(&mutex);
@@ -95,7 +97,7 @@ static void *compress(void *arg) {
 // Littleendian and Bigendian byte order illustrated
 // https://dflund.se/~pi/endian.html
 static void writeFile(int character_count, char *oldBuff) {
-  // character_count = htonl(character_count);    // write as network byte order
+  character_count = htonl(character_count); // write as network byte order
   fwrite(&character_count, sizeof(int), 1, stdout);
   fwrite(oldBuff, sizeof(char), 1, stdout);
 }
