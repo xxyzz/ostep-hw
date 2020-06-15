@@ -1,12 +1,15 @@
-#!/bin/bash
-if [ "$1" == "" ]; then
-    echo "Need iteration paramter"
+#!/usr/bin/env zsh
+
+if [[ "$1" == "" ]]; then
+    echo "Need max page number paramter"
     exit 1
 fi
-if [ ! -f ./tlb.out ]; then
-    gcc -O0 -o tlb.out tlb.c -Wall
-fi
-for (( i = 1; i <= 8192; i *= 2 ))
+
+gmake
+trails=1000
+for (( i = 1; i <= $1; i *= 2 ))
 do
-    ./tlb.out $i $1
+    echo "Number of pages: $i"
+    ./tlb.out $i $trails $2
+    wait
 done

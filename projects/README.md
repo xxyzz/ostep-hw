@@ -17,6 +17,7 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 ### Concurrency
 
 * [Web Server](./concurrency-webserver)
+* [Parallel Zip](./concurrency-pzip)
 
 ## Kernel Hacking Projects (xv6)
 

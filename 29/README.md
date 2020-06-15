@@ -16,9 +16,15 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     4 physical CPUs, 8 logical CPUs. More CPUs should be faster, but in this case it's not!
 
+    [Hyper-threading](https://en.wikipedia.org/wiki/Hyper-threading)
+
     ```
     // check CPU numbers
+    // Linux
     $ cat /proc/cpuinfo
+    // FreeBSD, macOS
+    $ sysctl hw.ncpu
+    // macOS
     $ sysctl hw.physicalcpu
     ```
 

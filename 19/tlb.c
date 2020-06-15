@@ -1,50 +1,86 @@
+#include <time.h>
+#ifdef Linux
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <sched.h>
+#include <sched.h> // CPU_ZERO
+#endif
+
+#ifdef FreeBSD
+#include <malloc_np.h>
+#include <pthread_np.h>
+#include <sys/_cpuset.h>
+#include <sys/cpuset.h>
+#ifndef cpu_set_t
+#define cpu_set_t cpuset_t
+#endif
+#endif
+
+#include <errno.h>
+#include <pthread.h>   // pthread_self
+#include <stdio.h>     // printf, fprintf
+#include <stdlib.h>    // exit, malloc, free
+#include <sys/times.h> // times
+#include <unistd.h>    // sysconf
+#define handle_error_en(en, msg)                                               \
+  do {                                                                         \
+    errno = en;                                                                \
+    perror(msg);                                                               \
+    exit(EXIT_FAILURE);                                                        \
+  } while (0)
 
 int main(int argc, char *argv[]) {
-    cpu_set_t set;
-    CPU_ZERO(&set);
-    CPU_SET(0, &set);
+  if (argc < 3) {
+    fprintf(stderr, "Need the number of pages and the number of trials\n");
+    exit(EXIT_FAILURE);
+  }
 
-    if (sched_setaffinity(getpid(), sizeof(cpu_set_t), &set) == -1) {
-        printf("Set CPU affinity error\n");
-        exit(1);
-    }
+  if (argc == 3) {
+    cpu_set_t cpuset;
+    pthread_t thread = pthread_self();
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
+    int s;
 
-    if (argc != 3) {
-        printf("Need the number of pages and the number of trials\n");
-        exit(1);
-    }
+    s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+      handle_error_en(s, "pthread_setaffinity_np");
 
-    int PAGESIZE = getpagesize();
-    int jump = PAGESIZE / sizeof(int);
-    int NUMPAGES = atoi(argv[1]);
-    int count = atoi(argv[2]);
-    if (NUMPAGES <= 0 || count <= 0) {
-        printf("Invalid input\n");
-        exit(1);
-    }
-    int *a = (int *) calloc(NUMPAGES * jump, sizeof(int));
-    struct timeval start, end;
-    int startReturn = gettimeofday(&start, NULL);
-    for(size_t j = 0; j < count; j++) {
-        for (int i = 0; i < NUMPAGES * jump; i += jump) {
-            a[i] += 1; 
-        }
-    }
-    int endReturn = gettimeofday(&end, NULL);
-    if (startReturn == -1 || endReturn == -1) {
-        printf("Gettimeofday() error");
-        exit(1);
-    }
+    printf("Runs on a single CPU\n");
+  }
 
-    int nloops = count * NUMPAGES;
-    // nanoseconds
-    printf("%f\n", (float) (end.tv_sec * 1000000 + end.tv_usec - start.tv_sec * 1000000 - start.tv_usec) * 1000 / nloops);
-    free(a);
-    return 0;
+  long PAGESIZE = sysconf(_SC_PAGESIZE);
+  long clktck = sysconf(_SC_CLK_TCK);
+  long jump = PAGESIZE / (long)sizeof(int);
+  int NUMPAGES = atoi(argv[1]);
+  int trails = atoi(argv[2]);
+  if (NUMPAGES <= 0) {
+    fprintf(stderr, "Invalid input\n");
+    exit(EXIT_FAILURE);
+  }
+  int *a = (int *)malloc((size_t)NUMPAGES * (size_t)jump * sizeof(int));
+  struct tms tmsstart, tmsend;
+  clock_t start, end;
+
+  if ((start = times(&tmsstart)) == -1)
+    handle_error_en(errno, "times");
+
+  for (int j = 0; j < trails; j++) {
+    for (int i = 0; i < NUMPAGES * jump; i += jump) {
+      a[i] += 1;
+    }
+  }
+
+  if ((end = times(&tmsend)) == -1)
+    handle_error_en(errno, "times");
+
+  int nloops = trails * NUMPAGES;
+  // nanoseconds
+  printf("real: %f\n", (end - start) / (double)clktck * 1000000000 / nloops);
+  printf("user: %f\n",
+         ((tmsend.tms_utime - tmsstart.tms_utime) / (double)clktck) *
+             1000000000 / nloops);
+  printf("sys: %f\n\n",
+         ((tmsend.tms_stime - tmsstart.tms_stime) / (double)clktck) *
+             1000000000 / nloops);
+  free(a);
+  return 0;
 }
