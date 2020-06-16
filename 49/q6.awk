@@ -1,4 +1,4 @@
-#! /usr/bin/awk -f
+#!/usr/bin/env awk -f
 
 {
     if ($5 == "C3")

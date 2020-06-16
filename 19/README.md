@@ -18,7 +18,28 @@
 
 4. Next, graph the results, making a graph that looks similar to the one above. Use a good tool like `ploticus` or even `zplot`. Visualization usually makes the data much easier to digest; why do you think that is?
 
-    ![](./tlb.png)
+    ```
+    $ gmake
+    # single CPU
+    # 2^19 * (4 * 2^10) / 2^30 = 2GB
+    # 2^16 = 65536 256MB
+    $ ./run.sh 524288 > single
+    In [1]: !python3 plot.py < single
+    # all CPUs
+    $ ./run.sh 524288 1 > multiple
+    In [2]: !python3 plot.py 1 < multiple
+    ```
+
+    FreeBSD 12.1
+    ![](./tlb_single.png)
+    ![](./tlb_multiple.png)
+
+    macOS 10.15.5
+    ![](./tlb_multiple_mac.png)
+
+    Raspbian 10
+    ![](./tlb_single_pi.png)
+    ![](./tlb_multiple_pi.png)
 
 5. One thing to watch out for is compiler optimization. Compilers do all sorts of clever things, including removing loops which increment values that no other part of the program subsequently uses. How can you ensure the compiler does not remove the main loop above from your TLB size estimator?
 
@@ -30,4 +51,4 @@
 
 7. Another issue that might arise relates to initialization. If you don’t initialize the array `a` above before accessing it, the first time you access it will be very expensive, due to initial access costs such as demand zeroing. Will this affect your code and its timing? What can you do to counterbalance these potential costs?
 
-   This array doesn't need to be initialized to zero.
+   This array doesn't need to be initialized to zero. `tlb.c` only measures the time of `for` loop, `malloc` won't affect the result.

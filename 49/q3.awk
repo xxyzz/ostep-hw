@@ -1,4 +1,4 @@
-#! /usr/bin/awk -f
+#!/usr/bin/env awk -f
 
 {
     if ($5 == "C3" && $8 == "getattr")
@@ -14,7 +14,7 @@
 END {
     for (f in fileSize)
         sum = sum + strtonum("0x"fileSize[f])
-    
+
     for (user in users)
         print "Client", user, "requests", users[user]
 

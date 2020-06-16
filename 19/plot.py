@@ -1,31 +1,27 @@
-#! /usr/bin/env python3
-import os
-import argparse
-import subprocess
+#!/usr/bin/env python3
+
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
-parser = argparse.ArgumentParser()
-parser.add_argument("trials", help="set iteration number")
-args = parser.parse_args()
-
-if not os.path.isfile("./tlb.out"):
-    subprocess.run(["gcc", "-O0", "-o", "tlb.out", "tlb.c", "-Wall"])
-
-y = []
-a = np.arange(14)
+data = np.loadtxt(sys.stdin)
+pages = len(data)
+a = np.arange(pages)
 x = 2**a
-for i in x:
-    result = subprocess.run(["./tlb.out", str(i), args.trials], stdout=subprocess.PIPE)
-    result = result.stdout.decode('utf-8')
-    y.append(float(result))
 
-fig = plt.figure()
-plt.plot(a, y, marker='o', color='orange')
+plt.plot(a, data[:, 0], marker='o', color='orange')
+plt.plot(a, data[:, 1], marker='o')
+plt.plot(a, data[:, 2], marker='o')
 plt.margins(0)
-plt.xticks(a, x) # evenly spaced
+plt.xticks(a, x, rotation=-20, fontsize='x-small') # evenly spaced
 plt.xlabel('Number Of Pages')
 plt.ylabel('Time Per Access (ns)')
-plt.title('TLB Size Measurement')
-plt.savefig('tlb.png', dpi=227)
+title = 'TLB Size Measurement(single CPU)'
+file_name = 'tlb_single.png'
+if len(sys.argv) > 1:
+    title = 'TLB Size Measurement(multiple CPU)'
+    file_name = 'tlb_multiple.png'
+plt.title(title)
+plt.legend(['real', 'user', 'sys'])
+plt.savefig(file_name, dpi=227)
 plt.show()

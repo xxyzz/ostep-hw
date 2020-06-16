@@ -1,17 +1,16 @@
-#include <time.h>
 #ifdef Linux
-#define _GNU_SOURCE
-#include <sched.h> // CPU_ZERO
+  #define _GNU_SOURCE
+  #include <sched.h> // CPU_ZERO
 #endif
 
 #ifdef FreeBSD
-#include <malloc_np.h>
-#include <pthread_np.h>
-#include <sys/_cpuset.h>
-#include <sys/cpuset.h>
-#ifndef cpu_set_t
-#define cpu_set_t cpuset_t
-#endif
+  #include <malloc_np.h>
+  #include <pthread_np.h>
+  #include <sys/_cpuset.h>
+  #include <sys/cpuset.h>
+  #ifndef cpu_set_t
+    #define cpu_set_t cpuset_t
+  #endif
 #endif
 
 #include <errno.h>
@@ -33,6 +32,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+
   if (argc == 3) {
     cpu_set_t cpuset;
     pthread_t thread = pthread_self();
@@ -43,8 +43,6 @@ int main(int argc, char *argv[]) {
     s = pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
     if (s != 0)
       handle_error_en(s, "pthread_setaffinity_np");
-
-    printf("Runs on a single CPU\n");
   }
 
   long PAGESIZE = sysconf(_SC_PAGESIZE);
@@ -56,11 +54,11 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Invalid input\n");
     exit(EXIT_FAILURE);
   }
-  int *a = (int *)malloc((size_t)NUMPAGES * (size_t)jump * sizeof(int));
+  int *a = (int *)malloc((size_t)NUMPAGES * (size_t)PAGESIZE);
   struct tms tmsstart, tmsend;
   clock_t start, end;
 
-  if ((start = times(&tmsstart)) == -1)
+  if ((int_fast16_t)(start = times(&tmsstart)) == -1)
     handle_error_en(errno, "times");
 
   for (int j = 0; j < trails; j++) {
@@ -69,17 +67,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if ((end = times(&tmsend)) == -1)
+  if ((int)(end = times(&tmsend)) == -1)
     handle_error_en(errno, "times");
 
   int nloops = trails * NUMPAGES;
   // nanoseconds
-  printf("real: %f\n", (end - start) / (double)clktck * 1000000000 / nloops);
-  printf("user: %f\n",
-         ((tmsend.tms_utime - tmsstart.tms_utime) / (double)clktck) *
-             1000000000 / nloops);
-  printf("sys: %f\n\n",
-         ((tmsend.tms_stime - tmsstart.tms_stime) / (double)clktck) *
+  printf("%f %f %f\n", (double)(end - start) / (double)clktck * 1000000000 / nloops,
+         ((double)(tmsend.tms_utime - tmsstart.tms_utime) / (double)clktck) *
+             1000000000 / nloops,
+         ((double)(tmsend.tms_stime - tmsstart.tms_stime) / (double)clktck) *
              1000000000 / nloops);
   free(a);
   return 0;
