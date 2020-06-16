@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-
   if (argc == 3) {
     cpu_set_t cpuset;
     pthread_t thread = pthread_self();
@@ -58,7 +57,7 @@ int main(int argc, char *argv[]) {
   struct tms tmsstart, tmsend;
   clock_t start, end;
 
-  if ((int_fast16_t)(start = times(&tmsstart)) == -1)
+  if ((int)(start = times(&tmsstart)) == -1)
     handle_error_en(errno, "times");
 
   for (int j = 0; j < trails; j++) {
