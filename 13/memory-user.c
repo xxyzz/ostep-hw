@@ -20,16 +20,13 @@ int main(int argc, char *argv[])
     clock_t begin = clock();
     double time_spent;
 
-    for (int i = 0; i < length; i++)
-    {
-        arr[i] += 1;
-    }
-
     while (1)
     {
         time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
         if (time_spent >= runTime)
             break;
+        for (int i = 0; i < length; i++)
+            arr[i] += 1;
     }
 
     free(arr);
