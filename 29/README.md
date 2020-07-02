@@ -101,71 +101,187 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
 3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
 
-    The time of one threshold in the book is more then ten seconds. But the trend is match.
+    The time of four threads, one threshold in the book is more then ten seconds, don't know how they get that number.
 
-    ```
-    $ make && ./sloppy_counter.out
-    // Runs on four Intel(R) Core(TM) i5-8259U CPU @ 2.30GHz CPUs
-    1 threads, 1 threshold
-    Time (seconds): 0.047187
+```
+$ make && ./approximate_counter.out
+// Runs on 2.3 GHz Quad-Core Intel i5-8259U, macOS 10.15.5
+1 threads, 1 threshold
+1000000 global counter
+Time (seconds): 0.039374
 
-    2 threads, 1 threshold
-    Time (seconds): 0.122691
+2 threads, 1 threshold
+2000000 global counter
+Time (seconds): 0.154999
 
-    3 threads, 1 threshold
-    Time (seconds): 0.113234
+3 threads, 1 threshold
+3000000 global counter
+Time (seconds): 0.290122
 
-    4 threads, 1 threshold
-    Time (seconds): 0.119592
+4 threads, 1 threshold
+4000000 global counter
+Time (seconds): 0.430974
 
-    1 threads, 2 threshold
-    Time (seconds): 0.032644
+1 threads, 2 threshold
+1000000 global counter
+Time (seconds): 0.029924
 
-    2 threads, 2 threshold
-    Time (seconds): 0.092127
+2 threads, 2 threshold
+2000000 global counter
+Time (seconds): 0.160152
 
-    3 threads, 2 threshold
-    Time (seconds): 0.075995
+3 threads, 2 threshold
+3000000 global counter
+Time (seconds): 0.239309
 
-    4 threads, 2 threshold
-    Time (seconds): 0.090719
+4 threads, 2 threshold
+4000000 global counter
+Time (seconds): 0.396419
 
-    1 threads, 3 threshold
-    Time (seconds): 0.031007
+1 threads, 4 threshold
+1000000 global counter
+Time (seconds): 0.037816
 
-    2 threads, 3 threshold
-    Time (seconds): 0.081507
+2 threads, 4 threshold
+2000000 global counter
+Time (seconds): 0.128155
 
-    3 threads, 3 threshold
-    Time (seconds): 0.061782
+3 threads, 4 threshold
+3000000 global counter
+Time (seconds): 0.217316
 
-    4 threads, 3 threshold
-    Time (seconds): 0.077193
+4 threads, 4 threshold
+4000000 global counter
+Time (seconds): 0.309085
 
-    1 threads, 4 threshold
-    Time (seconds): 0.029097
+1 threads, 8 threshold
+1000000 global counter
+Time (seconds): 0.023351
 
-    2 threads, 4 threshold
-    Time (seconds): 0.067766
+2 threads, 8 threshold
+2000000 global counter
+Time (seconds): 0.125174
 
-    3 threads, 4 threshold
-    Time (seconds): 0.057847
+3 threads, 8 threshold
+3000000 global counter
+Time (seconds): 0.204623
 
-    4 threads, 4 threshold
-    Time (seconds): 0.068740
+4 threads, 8 threshold
+4000000 global counter
+Time (seconds): 0.273745
 
-    1 threads, 5 threshold
-    Time (seconds): 0.028153
+1 threads, 16 threshold
+1000000 global counter
+Time (seconds): 0.022184
 
-    2 threads, 5 threshold
-    Time (seconds): 0.063899
+2 threads, 16 threshold
+2000000 global counter
+Time (seconds): 0.122244
 
-    3 threads, 5 threshold
-    Time (seconds): 0.052178
+3 threads, 16 threshold
+3000000 global counter
+Time (seconds): 0.201845
 
-    4 threads, 5 threshold
-    Time (seconds): 0.065875
-    ```
+4 threads, 16 threshold
+4000000 global counter
+Time (seconds): 0.266137
+
+1 threads, 32 threshold
+1000000 global counter
+Time (seconds): 0.021799
+
+2 threads, 32 threshold
+2000000 global counter
+Time (seconds): 0.113584
+
+3 threads, 32 threshold
+3000000 global counter
+Time (seconds): 0.195953
+
+4 threads, 32 threshold
+4000000 global counter
+Time (seconds): 0.258349
+
+1 threads, 64 threshold
+1000000 global counter
+Time (seconds): 0.021402
+
+2 threads, 64 threshold
+2000000 global counter
+Time (seconds): 0.114720
+
+3 threads, 64 threshold
+3000000 global counter
+Time (seconds): 0.196661
+
+4 threads, 64 threshold
+4000000 global counter
+Time (seconds): 0.249036
+
+1 threads, 128 threshold
+999936 global counter
+Time (seconds): 0.021340
+
+2 threads, 128 threshold
+2000000 global counter
+Time (seconds): 0.101197
+
+3 threads, 128 threshold
+2999936 global counter
+Time (seconds): 0.195355
+
+4 threads, 128 threshold
+4000000 global counter
+Time (seconds): 0.252860
+
+1 threads, 256 threshold
+999936 global counter
+Time (seconds): 0.021262
+
+2 threads, 256 threshold
+1999872 global counter
+Time (seconds): 0.109795
+
+3 threads, 256 threshold
+2999808 global counter
+Time (seconds): 0.198884
+
+4 threads, 256 threshold
+4000000 global counter
+Time (seconds): 0.242337
+
+1 threads, 512 threshold
+999936 global counter
+Time (seconds): 0.021172
+
+2 threads, 512 threshold
+1999872 global counter
+Time (seconds): 0.103475
+
+3 threads, 512 threshold
+2999808 global counter
+Time (seconds): 0.195022
+
+4 threads, 512 threshold
+3999744 global counter
+Time (seconds): 0.242711
+
+1 threads, 1024 threshold
+999424 global counter
+Time (seconds): 0.022284
+
+2 threads, 1024 threshold
+1999872 global counter
+Time (seconds): 0.112219
+
+3 threads, 1024 threshold
+2999296 global counter
+Time (seconds): 0.191190
+
+4 threads, 1024 threshold
+3999744 global counter
+Time (seconds): 0.251097
+```
 
 4. Build a version of a linked list that uses hand-over-hand locking[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf), as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?
 

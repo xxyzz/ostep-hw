@@ -57,7 +57,7 @@ static void *thread_function(void *arg) {
   if (s != 0)
     handle_error_en(s, "pthread_setaffinity_np");
 
-  for (int i = 0; i < ONE_MILLION / m->threads; i++)
+  for (int i = 0; i < ONE_MILLION; i++)
     increment(m->counter);
 
   pthread_exit(EXIT_SUCCESS);

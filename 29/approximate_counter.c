@@ -1,112 +1,111 @@
+#include "thread_helper.h"
+#include <math.h> // pow
 #include <stdio.h>
-#include <pthread.h>
-#include <stdlib.h>
+#include <stdlib.h> // malloc
 #include <sys/time.h>
-#define NUMTHREADS 4
+#ifdef FreeBSD
+#include <malloc_np.h>
+#endif
+#define NUMCPUS 4
 #define ONE_MILLION 1000000
-int threadsID[NUMTHREADS];
 
 typedef struct __counter_t {
-    int             global;            // global count
-    pthread_mutex_t glock;             // global lock
-    int             local[NUMTHREADS];    // local count (per CPU)
-    pthread_mutex_t llock[NUMTHREADS];    // ... and locks
-    int             threshold;         // update frequency
+  pthread_mutex_t glock;          // global lock
+  int local[NUMCPUS];             // local count (per CPU)
+  pthread_mutex_t llock[NUMCPUS]; // ... and locks
+  int global;                     // global count
+  int threshold;                  // update frequency
 } counter_t;
 
 typedef struct __myarg_t {
-    counter_t *c;
-    int       threshold;
-    int       amt;
-    int       threads;
+  counter_t *c;
+  int threshold;
+  int amt;
+  int threads;
+  char pad[sizeof(counter_t *) - sizeof(int)];
 } myarg_t;
-
 
 // init: record threadhold, init locks, init values
 //       of all local counts and global count
-void init(counter_t *c, int threshold) {
-    c->threshold = threshold;
-    c->global = 0;
-    pthread_mutex_init(&c->glock, NULL);
-    int i;
-    for(i = 0; i < NUMTHREADS; i++) {
-        c->local[i] = 0;
-        pthread_mutex_init(&c->llock[i], NULL);
-    }
-}
-
-// get: just return global amount (which may not be perfect)
-int get(counter_t *c) {
-    pthread_mutex_lock(&c->glock);
-    int val = c->global;
-    pthread_mutex_unlock(&c->glock);
-    return val; // only approximate!
+static void init(counter_t *c, int threshold) {
+  c->threshold = threshold;
+  c->global = 0;
+  Pthread_mutex_init(&c->glock, NULL);
+  for (int i = 0; i < NUMCPUS; i++) {
+    c->local[i] = 0;
+    Pthread_mutex_init(&c->llock[i], NULL);
+  }
 }
 
 // update: usually, just grab local lock and update local amount
 //         once local count has risen by ’threshold’, grab global
 //         lock and transfer local values to it
-void update(counter_t *c, int threadID, int amt) {
-    int thread = 0;
-    for(int i = 0; i < NUMTHREADS; i++) {
-        if (threadsID[i] == threadID) {
-            thread = i;
-            break;
-        }
-        if (threadsID[i] == 0) {
-            threadsID[i] = threadID;
-            thread = i;
-            break;
-        }
-    }
-
-    pthread_mutex_lock(&c->llock[thread]);
-    c->local[thread] += amt;                  // assumes amt > 0
-    if (c->local[thread] >= c->threshold) {   // transfer to global
-        pthread_mutex_lock(&c->glock);
-        c->global += c->local[thread];
-        pthread_mutex_unlock(&c->glock);
-        c->local[thread] = 0;
-    }
-    pthread_mutex_unlock(&c->llock[thread]);
+static void update(counter_t *c, int threadID, int amt) {
+  int cpu = threadID % NUMCPUS;
+  Pthread_mutex_lock(&c->llock[cpu]);
+  c->local[cpu] += amt;
+  if (c->local[cpu] >= c->threshold) {
+    // transfer to global (assumes amt>0)
+    Pthread_mutex_lock(&c->glock);
+    c->global += c->local[cpu];
+    Pthread_mutex_unlock(&c->glock);
+    c->local[cpu] = 0;
+  }
+  Pthread_mutex_unlock(&c->llock[cpu]);
 }
 
-void *thread_function(void *arg) {
-    myarg_t *m = (myarg_t *) arg;
-    pthread_t threadID = pthread_self();
-    int i;
-    for(i = 0; i < ONE_MILLION / m->threads; i++) {
-        update(m->c, (int) threadID, m->amt);
-    }
-    pthread_exit(0);
+// get: just return global amount (approximate)
+static int get(counter_t *c) {
+  Pthread_mutex_lock(&c->glock);
+  int val = c->global;
+  Pthread_mutex_unlock(&c->glock);
+  return val; // only approximate!
+}
+
+static void *thread_function(void *arg) {
+  myarg_t *m = (myarg_t *)arg;
+  pthread_t threadID = pthread_self();
+  for (int i = 0; i < ONE_MILLION; i++)
+    update(m->c, (int)threadID, m->amt);
+  pthread_exit(0);
 }
 
 int main(int argc, char *argv[]) {
-    for (int i = 1; i < 6; i++) {
-        int threshold = i;
-        for (int j = 1; j <= NUMTHREADS; j++) {
-            counter_t *c;
-            c = calloc(1, sizeof(counter_t));
-            init(c, threshold);
-            pthread_t threads[j];
-            myarg_t args;
-            args.c = c;
-            args.threshold = threshold;
-            args.amt = 1;
-            args.threads = j;
-            struct timeval start, end;
-            gettimeofday(&start, NULL);
-            for (int k = 0; k < j; k++) {
-                pthread_create(&threads[k], NULL, &thread_function, &args);
-            }
-            for (int l = 0; l < j; l++) {
-                pthread_join(threads[l], NULL);
-            }
-            gettimeofday(&end, NULL);
-            printf("%d threads, %d threshold\n", j, threshold);
-            printf("Time (seconds): %f\n\n", (float) (end.tv_usec - start.tv_usec + (end.tv_sec - start.tv_sec) * ONE_MILLION) / ONE_MILLION);
-            free(c);
-        }
+  for (int i = 0; i < 11; i++) {
+    double threshold = pow(2.0, (double)i);
+    for (int j = 1; j <= NUMCPUS; j++) {
+      counter_t *c = malloc(sizeof(counter_t));
+      if (c == NULL)
+        handle_error_en(errno, "malloc");
+      init(c, (int)threshold);
+      pthread_t *threads = malloc((size_t)j * sizeof(pthread_t));
+      if (threads == NULL)
+        handle_error_en(errno, "malloc");
+      myarg_t args;
+      args.c = c;
+      args.threshold = (int)threshold;
+      args.amt = 1;
+      args.threads = j;
+      struct timeval start, end;
+      int s = 0;
+      s = gettimeofday(&start, NULL);
+      if (s != 0)
+        handle_error_en(s, "gettimeofday");
+      for (int k = 0; k < j; k++)
+        pthread_create(&threads[k], NULL, &thread_function, &args);
+      for (int l = 0; l < j; l++)
+        pthread_join(threads[l], NULL);
+      s = gettimeofday(&end, NULL);
+      if (s != 0)
+        handle_error_en(s, "gettimeofday");
+      printf("%d threads, %d threshold\n", j, (int)threshold);
+      printf("%d global counter\n", get(c));
+      printf("Time (seconds): %f\n\n",
+             ((double)(end.tv_usec - start.tv_usec) / ONE_MILLION +
+              (double)(end.tv_sec - start.tv_sec)));
+      free(c);
+      free(threads);
     }
-    return 0;
+  }
+  return 0;
 }
