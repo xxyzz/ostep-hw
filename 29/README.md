@@ -43,6 +43,30 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     Here are my results. The time of one thread is close to the book(0.03 seconds), but the results of more threads from the book are all exceed five seconds. Maybe I was wrong or the book was wrong.
 
+    ![](./traditional-approximate.png)
+
+    Approximate: approximate counters with threshold 1024.
+
+    ```
+    // Runs on 2.3 GHz Quad-Core Intel i5-8259U, macOS 10.15.5
+    // remove limit cpu code
+    1 threads
+    global count: 1000000
+    Time (seconds): 0.019966
+
+    2 threads
+    global count: 2000000
+    Time (seconds): 0.095837
+
+    3 threads
+    global count: 3000000
+    Time (seconds): 0.180244
+
+    4 threads
+    global count: 4000000
+    Time (seconds): 0.195340
+    ```
+
     ```
     $ make && ./simple_counter.out
     // Runs on four Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz CPUs
@@ -102,6 +126,8 @@ In this homework, you’ll gain some experience with writing concurrent code and
 3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
 
     The time of four threads, one threshold in the book is more then ten seconds, don't know how they get that number.
+
+    ![](./approximate.png)
 
 ```
 $ make && ./approximate_counter.out

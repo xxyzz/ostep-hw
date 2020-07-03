@@ -92,17 +92,19 @@ int main(int argc, char *argv[]) {
       if (s != 0)
         handle_error_en(s, "gettimeofday");
       for (int k = 0; k < j; k++)
-        pthread_create(&threads[k], NULL, &thread_function, &args);
+        Pthread_create(&threads[k], NULL, &thread_function, &args);
       for (int l = 0; l < j; l++)
-        pthread_join(threads[l], NULL);
+        Pthread_join(threads[l], NULL);
       s = gettimeofday(&end, NULL);
       if (s != 0)
         handle_error_en(s, "gettimeofday");
+      long long startusec, endusec;
+      startusec = start.tv_sec * ONE_MILLION + start.tv_usec;
+      endusec = end.tv_sec * ONE_MILLION + end.tv_usec;
       printf("%d threads, %d threshold\n", j, (int)threshold);
       printf("%d global counter\n", get(c));
       printf("Time (seconds): %f\n\n",
-             ((double)(end.tv_usec - start.tv_usec) / ONE_MILLION +
-              (double)(end.tv_sec - start.tv_sec)));
+             ((double)(endusec - startusec) / ONE_MILLION));
       free(c);
       free(threads);
     }

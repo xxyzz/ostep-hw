@@ -4,3 +4,4 @@
 *.o
 *.cgi
 *.dSYM
+.ipynb_checkpoints
