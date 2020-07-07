@@ -14,7 +14,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
 2. Now, build a simple concurrent counter and measure how long it takes to increment the counter many times as the number of threads increases. How many CPUs are available on the system you are using? Does this number impact your measurements at all?
 
-    4 physical CPUs, 8 logical CPUs. More CPUs should be faster, but in this case it's not!
+    Four cores(eight threads) on mac, two cores(four threads) on FreeBSD. More cores actually runs more slowly(see FreeBSD results).
 
     [Hyper-threading](https://en.wikipedia.org/wiki/Hyper-threading)
 
@@ -49,7 +49,8 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     ```
     // Runs on 2.3 GHz Quad-Core Intel i5-8259U, macOS 10.15.5
-    // remove limit cpu code
+    // remove cpu limitation code(_np nonportable)
+    $ ./simple_counter.out
     1 threads
     global count: 1000000
     Time (seconds): 0.019966
@@ -67,61 +68,73 @@ In this homework, you’ll gain some experience with writing concurrent code and
     Time (seconds): 0.195340
     ```
 
-    ```
-    $ make && ./simple_counter.out
-    // Runs on four Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz CPUs
-    1 CPUs                                 
-    1 threads
-    Time (seconds): 0.022937
+```
+// Runs on 1.7 GHz Dual-Core Intel i5-4210U, FreeBSD 12.1
+$ ./simple_counter.out
+1 cpus, 1 threads
+global count: 1000000
+Time (seconds): 0.051862
 
-    2 threads
-    Time (seconds): 0.024302
+1 cpus, 2 threads
+global count: 2000000
+Time (seconds): 0.101337
 
-    3 threads 
-    Time (seconds): 0.022126
+1 cpus, 3 threads
+global count: 3000000
+Time (seconds): 0.150807
 
-    4 threads
-    Time (seconds): 0.021776
+1 cpus, 4 threads
+global count: 4000000
+Time (seconds): 0.197938
 
-    2 CPUs
-    1 threads
-    Time (seconds): 0.021761
+2 cpus, 1 threads
+global count: 1000000
+Time (seconds): 0.051836
 
-    2 threads
-    Time (seconds): 0.131118
+2 cpus, 2 threads
+global count: 2000000
+Time (seconds): 0.268700
 
-    3 threads
-    Time (seconds): 0.103083
+2 cpus, 3 threads
+global count: 3000000
+Time (seconds): 0.428179
 
-    4 threads
-    Time (seconds): 0.138586
+2 cpus, 4 threads
+global count: 4000000
+Time (seconds): 0.537222
 
-    3 CPUs
-    1 threads
-    Time (seconds): 0.023613
+3 cpus, 1 threads
+global count: 1000000
+Time (seconds): 0.051874
 
-    2 threads
-    Time (seconds): 0.112032
+3 cpus, 2 threads
+global count: 2000000
+Time (seconds): 0.288678
 
-    3 threads
-    Time (seconds): 0.100858
+3 cpus, 3 threads
+global count: 3000000
+Time (seconds): 0.390897
 
-    4 threads
-    Time (seconds): 0.097561
+3 cpus, 4 threads
+global count: 4000000
+Time (seconds): 0.457693
 
-    4 CPUs
-    1 threads
-    Time (seconds): 0.021350
+4 cpus, 1 threads
+global count: 1000000
+Time (seconds): 0.051800
 
-    2 threads
-    Time (seconds): 0.132612
+4 cpus, 2 threads
+global count: 2000000
+Time (seconds): 0.267941
 
-    3 threads
-    Time (seconds): 0.091974
+4 cpus, 3 threads
+global count: 3000000
+Time (seconds): 0.390828
 
-    4 threads
-    Time (seconds): 0.091199
-    ```
+4 cpus, 4 threads
+global count: 4000000
+Time (seconds): 0.575514
+```
 
 3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
 

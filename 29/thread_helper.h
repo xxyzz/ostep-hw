@@ -24,5 +24,7 @@
 #define Pthread_mutex_lock(m) assert(pthread_mutex_lock(m) == 0)
 #define Pthread_mutex_unlock(m) assert(pthread_mutex_unlock(m) == 0)
 #define Pthread_mutex_destroy(m) assert(pthread_mutex_destroy(m) == 0)
+#define Pthread_setaffinity_np(thread, cpusetsize, cpuset)                     \
+  assert(pthread_setaffinity_np(thread, cpusetsize, cpuset) == 0)
 
 #endif // _thread_helper_h

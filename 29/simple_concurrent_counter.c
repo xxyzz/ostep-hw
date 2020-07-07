@@ -25,12 +25,12 @@ typedef struct __counter_t {
   char pad[sizeof(pthread_mutex_t) - sizeof(int)];
 } counter_t;
 
-typedef struct __myarg_t {
+typedef struct __thread_info_t {
   counter_t *counter;
-  cpu_set_t set;
-  int threads;
+  pthread_t thread;
+  int cpu_idx;
   char pad[sizeof(counter_t *) - sizeof(int)];
-} myarg_t;
+} thread_info_t;
 
 static void init(counter_t *c) {
   c->value = 0;
@@ -51,11 +51,11 @@ static int get(counter_t *c) {
 }
 
 static void *thread_function(void *arg) {
-  myarg_t *m = (myarg_t *)arg;
-  int s;
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &m->set);
-  if (s != 0)
-    handle_error_en(s, "pthread_setaffinity_np");
+  thread_info_t *m = (thread_info_t *)arg;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(m->cpu_idx, &cpuset);
+  Pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   for (int i = 0; i < ONE_MILLION; i++)
     increment(m->counter);
@@ -64,50 +64,45 @@ static void *thread_function(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
-  cpu_set_t set;
   int cpus = (int)sysconf(_SC_NPROCESSORS_ONLN), s;
   if (cpus == -1)
     handle_error_en(cpus, "sysconf");
 
   for (int i = 1; i <= cpus; i++) {
-    CPU_ZERO(&set);
-    for (int m = 0; m < i; m++)
-      CPU_SET(m, &set);
-
-    printf("%d CPUs\n", i);
     for (int l = 1; l <= cpus; l++) {
-      pthread_t *threads = malloc((size_t)l * sizeof(pthread_t));
-      if (threads == NULL)
+      thread_info_t *tinfo = malloc((size_t)l * sizeof(thread_info_t));
+      if (tinfo == NULL)
         handle_error_en(errno, "malloc");
       struct timeval start, end;
       counter_t *counter = malloc(sizeof(counter_t));
       if (counter == NULL)
         handle_error_en(errno, "malloc");
       init(counter);
-      myarg_t args;
-      args.counter = counter;
-      args.set = set;
-      args.threads = l;
 
       s = gettimeofday(&start, NULL);
       if (s != 0)
         handle_error_en(s, "gettimeofday");
-      for (int j = 0; j < l; j++)
-        pthread_create(&threads[j], NULL, &thread_function, &args);
+      for (int j = 0; j < l; j++) {
+        tinfo[j].counter = counter;
+        tinfo[j].cpu_idx = j % i;
+        Pthread_create(&tinfo[j].thread, NULL, &thread_function, &tinfo[j]);
+      }
       for (int k = 0; k < l; k++)
-        pthread_join(threads[k], NULL);
+        Pthread_join(tinfo[k].thread, NULL);
       s = gettimeofday(&end, NULL);
       if (s != 0)
         handle_error_en(s, "gettimeofday");
 
-      printf("%d threads\n", l);
+      long long startusec, endusec;
+      startusec = start.tv_sec * ONE_MILLION + start.tv_usec;
+      endusec = end.tv_sec * ONE_MILLION + end.tv_usec;
+      printf("%d cpus, %d threads\n", i, l);
       printf("global count: %d\n", get(counter));
       printf("Time (seconds): %f\n\n",
-             ((double)(end.tv_usec - start.tv_usec) / ONE_MILLION +
-              (double)(end.tv_sec - start.tv_sec)));
+             ((double)(endusec - startusec) / ONE_MILLION));
       Pthread_mutex_destroy(&counter->lock);
       free(counter);
-      free(threads);
+      free(tinfo);
     }
   }
   return 0;
