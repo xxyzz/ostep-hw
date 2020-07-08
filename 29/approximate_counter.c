@@ -105,6 +105,9 @@ int main(int argc, char *argv[]) {
       printf("%d global counter\n", get(c));
       printf("Time (seconds): %f\n\n",
              ((double)(endusec - startusec) / ONE_MILLION));
+      Pthread_mutex_destroy(&c->glock);
+      for (int m = 0; m < NUMCPUS; m++)
+        Pthread_mutex_destroy(&c->llock[m]);
       free(c);
       free(threads);
     }
