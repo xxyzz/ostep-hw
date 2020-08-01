@@ -1,7 +1,7 @@
-all: UDP-client UDP-server
+CC = clang
+CFLAGS = -Weverything -pthread
 
-UDP-client: UDP-client.c UDP-lib.h
-	gcc -o UDP-client.out UDP-client.c -Wall -pthread
+all: UDP-client.out UDP-server.out
 
-UDP-server: UDP-server.c UDP-lib.h
-	gcc -o UDP-server.out UDP-server.c -Wall -pthread
+%.out: %.c UDP-lib.h
+	$(CC) -o $@ $< $(CFLAGS)

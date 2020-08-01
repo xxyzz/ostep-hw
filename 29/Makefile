@@ -1,24 +1,27 @@
 CC := clang
-SHELL := $(shell which zsh)
 OSFLAG := -D $(shell uname -s)
-CFLAGS = -Weverything -pthread
+CFLAGS := -Weverything -pthread
 
-all: approximate_counter queue simple_counter standard_list hand_over_hand btree
+all: approximate_counter.out queue.out simple_counter.out \
+	standard_list.out hand_over_hand.out btree.out
 
-approximate_counter: approximate_counter.c
-	$(CC) -o approximate_counter.out approximate_counter.c $(CFLAGS) -lm $(OSFLAG)
+approximate_counter.out: approximate_counter.c
+	$(CC) -o $@ $^ $(CFLAGS) -lm $(OSFLAG)
 
-queue: concurrent_queue.c
-	$(CC) -o queue.out concurrent_queue.c $(CFLAGS)
+queue.out: concurrent_queue.c
+	$(CC) -o $@ $^ $(CFLAGS)
 
-simple_counter: simple_concurrent_counter.c thread_helper.h
-	$(CC) -o simple_counter.out simple_concurrent_counter.c $(CFLAGS) $(OSFLAG)
+simple_counter.out: simple_concurrent_counter.c thread_helper.h
+	$(CC) -o $@ $< $(CFLAGS) $(OSFLAG)
 
-standard_list: concurrent-linked-list.c
-	$(CC) -o standard_list.out concurrent-linked-list.c $(CFLAGS)
+standard_list.out: concurrent-linked-list.c
+	$(CC) -o $@ $^ $(CFLAGS)
 
-hand_over_hand: hand-over-hand-locking-list.c
-	$(CC) -o hand_over_hand.out hand-over-hand-locking-list.c $(CFLAGS)
+hand_over_hand.out: hand-over-hand-locking-list.c
+	$(CC) -o $@ $^ $(CFLAGS)
 
-btree: btree.c
-	$(CC) -o btree.out btree.c $(CFLAGS)
+btree.out: btree.c
+	$(CC) -o $@ $^ $(CFLAGS)
+
+clean:
+	rm -f ./*.out

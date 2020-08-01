@@ -1,16 +1,14 @@
-CFLAGS = -Wall
-UNAME := $(shell uname)
-ifneq ($(UNAME), Darwin)
-	CFLAGS += -lrt
+CC = clang
+CFLAGS = -Weverything
+UNAME := $(shell uname -s)
+ifeq ($(UNAME), Linux)
+	CFLAGS += -lrt  # Linux needs it for aio, BSD doesn't
 endif
 
-all: TCPServer TCPClient TCPServer-sync
+all: TCPServer.out TCPClient.out TCPServer-sync.out
 
-TCPServer: TCPServer.c
-	gcc -o TCPServer.out TCPServer.c $(CFLAGS)
+%.out: %.c
+	$(CC) -o $@ $^ $(CFLAGS)
 
-TCPClient: TCPClient.c
-	gcc -o TCPClient.out TCPClient.c -Wall
-
-TCPServer-sync: TCPServer-sync.c
-	gcc -o TCPServer-sync.out TCPServer-sync.c $(CFLAGS)
+clean:
+	rm -f ./*.out

@@ -1,6 +1,2 @@
-
-all: mem
-
-mem: mem.c
-	gcc -o mem.out mem.c -Wall -O
-
+mem.out: mem.c
+	clang -o $@ $< -Weverything

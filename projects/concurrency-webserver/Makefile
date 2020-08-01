@@ -2,25 +2,23 @@
 # To compile, type "make" or make "all"
 # To remove files, type "make clean"
 
-CC = gcc
-CFLAGS = -Wall -pthread -g
-OBJS = wserver.o wclient.o request.o io_helper.o 
+CC = clang
+CFLAGS = -Weverything -pthread
+OBJS = wserver.o wclient.o request.o io_helper.o
 
-.SUFFIXES: .c .o 
+all: wserver.out wclient.out spin.cgi
 
-all: wserver wclient spin.cgi
+wserver.out: wserver.o request.o io_helper.o thread_helper.h
+	$(CC) $(CFLAGS) -o $@ wserver.o request.o io_helper.o
 
-wserver: wserver.o request.o io_helper.o thread_helper.h
-	$(CC) $(CFLAGS) -o wserver.out wserver.o request.o io_helper.o
-
-wclient: wclient.o io_helper.o thread_helper.h
-	$(CC) $(CFLAGS) -o wclient.out wclient.o io_helper.o 
+wclient.out: wclient.o io_helper.o thread_helper.h
+	$(CC) $(CFLAGS) -o $@ wclient.o io_helper.o
 
 spin.cgi: spin.c
-	$(CC) $(CFLAGS) -o spin.cgi spin.c
+	$(CC) $(CFLAGS) -o $@ $^
 
-.c.o:
+%.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	-rm -f $(OBJS) wserver.out wclient.out spin.cgi
+	rm -f $(OBJS) wserver.out wclient.out spin.cgi
