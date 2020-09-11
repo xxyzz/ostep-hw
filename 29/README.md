@@ -41,7 +41,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
     }
     ```
 
-    Here are my results. The time of one thread is close to the book(0.03 seconds), but the results of more threads from the book are all exceed five seconds. Maybe I was wrong or the book was wrong.
+    Here are my results. The time of one thread is close to the book(0.03 seconds), but the results of more threads from the book are all exceed five seconds.
 
     ![](./traditional-approximate.png)
 
@@ -138,7 +138,7 @@ Time (seconds): 0.575514
 
 3. Next, build a version of the sloppy counter. Once again, measure its performance as the number of threads varies, as well as the threshold. Do the numbers match what you see in the chapter?
 
-    The time of four threads, one threshold in the book is more then ten seconds, don't know how they get that number.
+    The time of four threads, one threshold in the book is more then ten seconds.
 
     ![](./approximate.png)
 

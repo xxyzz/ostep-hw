@@ -13,12 +13,11 @@ $ brew install gdb x86_64-elf-gcc qemu
 // edit Makefile
 // line 32
 TOOLPREFIX = x86_64-elf-
-// line 75
-AS = $(TOOLPREFIX)as
 // line 220
 CPUS := 1
 
-// edit kernel.ld
+// edit kernel.ld(not needed anymore, don't know why
+// it broken and how the fix works)
 // https://github.com/mit-pdos/xv6-public/pull/115
 ```
 
@@ -38,10 +37,13 @@ The `src` folder needs all the source files of xv6 to run the test, I only push 
 
 ## Debug xv6
 
+[GDB to LLDB command map](https://lldb.llvm.org/use/map.html)
+
 ```
 $ make qemu-nox-gdb
-$ gdb kernel
+$ gdb
 (gdb) b function_name
 (gdb) b filename:line_number
 (gdb) c
+(gdb) bt
 ```

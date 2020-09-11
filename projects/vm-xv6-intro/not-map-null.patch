@@ -1,0 +1,79 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..303e617 100644
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,7 @@ OBJS = \
+ 	vm.o\
+ 
+ # Cross-compiling (e.g., on Mac OS X)
+-# TOOLPREFIX = i386-jos-elf
++TOOLPREFIX = x86_64-elf-
+ 
+ # Using native tools (e.g., on X86 Linux)
+ #TOOLPREFIX = 
+@@ -72,7 +72,7 @@ QEMU = $(shell if which qemu > /dev/null; \
+ endif
+ 
+ CC = $(TOOLPREFIX)gcc
+-AS = $(TOOLPREFIX)gas
++AS = $(TOOLPREFIX)as
+ LD = $(TOOLPREFIX)ld
+ OBJCOPY = $(TOOLPREFIX)objcopy
+ OBJDUMP = $(TOOLPREFIX)objdump
+@@ -146,7 +146,7 @@ vectors.S: vectors.pl
+ ULIB = ulib.o usys.o printf.o umalloc.o
+ 
+ _%: %.o $(ULIB)
+-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
++	$(LD) $(LDFLAGS) -N -e main -Ttext 0x1000 -o $@ $^
+ 	$(OBJDUMP) -S $@ > $*.asm
+ 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
+ 
+@@ -217,7 +217,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+ 
+diff --git a/exec.c b/exec.c
+index b40134f..dc64a25 100644
+--- a/exec.c
++++ b/exec.c
+@@ -39,7 +39,7 @@ exec(char *path, char **argv)
+     goto bad;
+ 
+   // Load program into memory.
+-  sz = 0;
++  sz = PGSIZE;
+   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
+     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
+       goto bad;
+diff --git a/syscall.c b/syscall.c
+index ee85261..068a42d 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -63,7 +63,7 @@ argptr(int n, char **pp, int size)
+  
+   if(argint(n, &i) < 0)
+     return -1;
+-  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
++  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz || (uint)i < PGSIZE)
+     return -1;
+   *pp = (char*)i;
+   return 0;
+diff --git a/vm.c b/vm.c
+index 7134cff..440f489 100644
+--- a/vm.c
++++ b/vm.c
+@@ -322,7 +322,7 @@ copyuvm(pde_t *pgdir, uint sz)
+ 
+   if((d = setupkvm()) == 0)
+     return 0;
+-  for(i = 0; i < sz; i += PGSIZE){
++  for(i = PGSIZE; i < sz; i += PGSIZE){
+     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+       panic("copyuvm: pte should exist");
+     if(!(*pte & PTE_P))
