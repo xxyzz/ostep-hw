@@ -1,0 +1,3 @@
+test null pointer dereference
+
+should get trap 14 error 4

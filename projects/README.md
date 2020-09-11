@@ -1,6 +1,6 @@
-# Projects for an Operating Systems Class
+# Projects
 
-Guide and the testing framework are [here](https://github.com/remzi-arpacidusseau/ostep-projects).
+See the author's repo(https://github.com/remzi-arpacidusseau/ostep-projects) for more detailed guides and test scripts.
 
 ## C/Linux Projects
 
@@ -12,12 +12,12 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 
 ### Processes and Scheduling
 
-* [Shell](./processes-shell)
+- [Shell](./processes-shell)
 
 ### Concurrency
 
-* [Web Server](./concurrency-webserver)
-* [Parallel Zip](./concurrency-pzip)
+- [Web Server](./concurrency-webserver)
+- [Parallel Zip](./concurrency-pzip)
 
 ## Kernel Hacking Projects (xv6)
 
@@ -28,3 +28,7 @@ Guide and the testing framework are [here](https://github.com/remzi-arpacidussea
 ### Processes and Scheduling
 
 - [Scheduling (Lottery)](./scheduling-xv6-lottery)
+
+### Virtual Memory
+
+- [Virtual Memory (Null Pointer and Read-Only Regions)](./vm-xv6-intro)
