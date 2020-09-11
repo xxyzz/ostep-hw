@@ -1,5 +1,6 @@
 .DS_Store
 *.out
+!**/tests/*.out
 *.txt
 *.o
 *.cgi
