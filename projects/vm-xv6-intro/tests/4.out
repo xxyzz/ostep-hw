@@ -1,0 +1,2 @@
+XV6_TEST_OUTPUT mprotect returned 0
+pid 3 test_4: trap 14 err 7 on cpu 0 eip 0x1030 addr 0x1000--kill proc

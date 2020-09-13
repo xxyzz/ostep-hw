@@ -1,0 +1,4 @@
+XV6_TEST_OUTPUT mprotect returned 0
+XV6_TEST_OUTPUT munprotect returned 0
+XV6_TEST_OUTPUT address 4096: 69487757
+XV6_TEST_OUTPUT address 4096: 1

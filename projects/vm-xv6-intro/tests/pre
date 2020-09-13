@@ -1,7 +1,12 @@
-../tester/xv6-edit-makefile.sh src/Makefile test_1,test_2,test_3 > src/Makefile.test
+../tester/xv6-edit-makefile.sh src/Makefile \
+  test_1,test_2,test_3,test_4,test_5,test_6 \
+  > src/Makefile.test
 cp -f tests/test_1.c src/test_1.c
 cp -f tests/test_2.c src/test_2.c
 cp -f tests/test_3.c src/test_3.c
+cp -f tests/test_4.c src/test_4.c
+cp -f tests/test_5.c src/test_5.c
+cp -f tests/test_6.c src/test_6.c
 cd src
 make -f Makefile.test clean
 make -f Makefile.test xv6.img
