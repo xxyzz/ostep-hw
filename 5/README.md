@@ -14,9 +14,35 @@ In this homework, you are to gain some familiarity with the process management A
 
 2. Write a program that opens a file (with the `open()` system call) and then calls `fork()` to create a new process. Can both the child and parent access the file descriptor returned by `open()`? What happens when they are writing to the file concurrently, i.e., at the same time?
 
-    - They both can access the file descriptor.
+    They both can access the file descriptor.
 
-    - One overwrites another.
+    Most times, the parent writes before the child:
+
+    ```
+    file descriptor in parent prosess: 3
+    file descriptor in child process: 3
+
+    file contents:
+    First line.
+    parent writes a line.
+    First line.
+    child writes a line.
+    ```
+
+    Sometimes they overwrite each other(I only get this result on FreeBSD so far):
+
+    ```
+    file descriptor in parent prosess: 3
+    file descriptor in child process: 3
+
+    file contents:
+    First line.
+    First line.
+    child writes a line.
+    parent writes a line.
+    ```
+
+    I think it depends on the system scheduler.
 
 3. Write another program using `fork()`. The child process should print “hello”; the parent process should print “goodbye”. You should try to ensure that the child process always prints first; can you do this *without* calling **wait()** in the parent?
 
