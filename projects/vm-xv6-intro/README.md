@@ -65,5 +65,6 @@ pid 3 null: trap 14 err 4 on cpu 0 eip 0x1000 addr 0x0--kill proc
 #define T_DIVIDE         0      // divide error
 #define T_OFLOW          4      // overflow
 #define T_ILLOP          6      // illegal opcode
+#define T_DEVICE         7      // device not available
 #define T_PGFLT         14      // page fault
 ```

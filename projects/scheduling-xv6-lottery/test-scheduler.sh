@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env zsh
 
 if ! [[ -d src ]]; then
     echo "The src/ dir does not exist."

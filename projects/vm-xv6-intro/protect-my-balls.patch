@@ -1,0 +1,219 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..303e617 100644
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,7 @@ OBJS = \
+ 	vm.o\
+ 
+ # Cross-compiling (e.g., on Mac OS X)
+-# TOOLPREFIX = i386-jos-elf
++TOOLPREFIX = x86_64-elf-
+ 
+ # Using native tools (e.g., on X86 Linux)
+ #TOOLPREFIX = 
+@@ -72,7 +72,7 @@ QEMU = $(shell if which qemu > /dev/null; \
+ endif
+ 
+ CC = $(TOOLPREFIX)gcc
+-AS = $(TOOLPREFIX)gas
++AS = $(TOOLPREFIX)as
+ LD = $(TOOLPREFIX)ld
+ OBJCOPY = $(TOOLPREFIX)objcopy
+ OBJDUMP = $(TOOLPREFIX)objdump
+@@ -146,7 +146,7 @@ vectors.S: vectors.pl
+ ULIB = ulib.o usys.o printf.o umalloc.o
+ 
+ _%: %.o $(ULIB)
+-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
++	$(LD) $(LDFLAGS) -N -e main -Ttext 0x1000 -o $@ $^
+ 	$(OBJDUMP) -S $@ > $*.asm
+ 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
+ 
+@@ -217,7 +217,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+ 
+diff --git a/defs.h b/defs.h
+index 82fb982..c07e9c8 100644
+--- a/defs.h
++++ b/defs.h
+@@ -185,6 +185,8 @@ void            switchuvm(struct proc*);
+ void            switchkvm(void);
+ int             copyout(pde_t*, uint, void*, uint);
+ void            clearpteu(pde_t *pgdir, char *uva);
++int             mprotect(void *, int);
++int             munprotect(void *, int);
+ 
+ // number of elements in fixed-size array
+ #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+diff --git a/exec.c b/exec.c
+index b40134f..dc64a25 100644
+--- a/exec.c
++++ b/exec.c
+@@ -39,7 +39,7 @@ exec(char *path, char **argv)
+     goto bad;
+ 
+   // Load program into memory.
+-  sz = 0;
++  sz = PGSIZE;
+   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
+     if(readi(ip, (char*)&ph, off, sizeof(ph)) != sizeof(ph))
+       goto bad;
+diff --git a/syscall.c b/syscall.c
+index ee85261..ddf09de 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -63,7 +63,7 @@ argptr(int n, char **pp, int size)
+  
+   if(argint(n, &i) < 0)
+     return -1;
+-  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
++  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz || (uint)i < PGSIZE)
+     return -1;
+   *pp = (char*)i;
+   return 0;
+@@ -103,6 +103,8 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_mprotect(void);
++extern int sys_munprotect(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +128,8 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_mprotect] sys_mprotect,
++[SYS_munprotect] sys_munprotect,
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..ef11022 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,5 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_mprotect 22
++#define SYS_munprotect 23
+diff --git a/sysproc.c b/sysproc.c
+index 0686d29..a6f6ea3 100644
+--- a/sysproc.c
++++ b/sysproc.c
+@@ -89,3 +89,27 @@ sys_uptime(void)
+   release(&tickslock);
+   return xticks;
+ }
++
++int sys_mprotect(void) {
++  void *addr;
++  int len;
++
++  if (argptr(0, (char **)&addr, sizeof(void *)) || argint(1, &len) < 0)
++    return -1;
++  if ((uint)addr % PGSIZE != 0 || len <= 0 || (uint)addr < PGSIZE)
++    return -1;
++
++  return mprotect(addr, len);
++}
++
++int sys_munprotect(void) {
++  void *addr;
++  int len;
++
++  if (argptr(0, (char **)&addr, sizeof(void *)) || argint(1, &len) < 0)
++    return -1;
++  if ((uint)addr % PGSIZE != 0 || len <= 0 || (uint)addr < PGSIZE)
++    return -1;
++
++  return munprotect(addr, len);
++}
+diff --git a/user.h b/user.h
+index 4f99c52..f5aea04 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,8 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int mprotect(void *, int);
++int munprotect(void *, int);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..42f7a42 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,5 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(mprotect)
++SYSCALL(munprotect)
+diff --git a/vm.c b/vm.c
+index 7134cff..c7e8ff5 100644
+--- a/vm.c
++++ b/vm.c
+@@ -322,7 +322,7 @@ copyuvm(pde_t *pgdir, uint sz)
+ 
+   if((d = setupkvm()) == 0)
+     return 0;
+-  for(i = 0; i < sz; i += PGSIZE){
++  for(i = PGSIZE; i < sz; i += PGSIZE){
+     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+       panic("copyuvm: pte should exist");
+     if(!(*pte & PTE_P))
+@@ -392,3 +392,43 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
+ //PAGEBREAK!
+ // Blank page.
+ 
++int mprotect(void *addr, int len) {
++  struct proc *curproc = myproc();
++  if ((uint)addr >= curproc->sz || (uint)addr + len >= curproc->sz)
++    return -1;
++
++  char *a, *last;
++  pte_t *pte;
++  a = (char *)PGROUNDDOWN((uint)addr);
++  last = (char *)PGROUNDDOWN(((uint)addr) + len - 1);
++  for (;;) {
++    if ((pte = walkpgdir(curproc->pgdir, a, 0)) == 0)
++      return -1;
++    *pte &= ~PTE_W;
++    if (a >= last)
++      break;
++    a += PGSIZE;
++  }
++  lcr3(V2P(curproc->pgdir)); // update page flag
++  return 0;
++}
++int munprotect(void *addr, int len) {
++  struct proc *curproc = myproc();
++  if ((uint)addr >= curproc->sz || (uint)addr + len >= curproc->sz)
++    return -1;
++
++  char *a, *last;
++  pte_t *pte;
++  a = (char *)PGROUNDDOWN((uint)addr);
++  last = (char *)PGROUNDDOWN(((uint)addr) + len - 1);
++  for (;;) {
++    if ((pte = walkpgdir(curproc->pgdir, a, 0)) == 0)
++      return -1;
++    *pte |= PTE_W;
++    if (a >= last)
++      break;
++    a += PGSIZE;
++  }
++  lcr3(V2P(curproc->pgdir)); // update page flag
++  return 0;
++}
