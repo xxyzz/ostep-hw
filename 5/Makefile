@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -Weverything
-TARGETS := $(foreach i,$(shell seq 8),$i.out)
+TARGETS := $(foreach i,$(shell seq 9),$i.out)
 
 all: $(TARGETS)
 
