@@ -1,5 +1,5 @@
 CC := clang
-CFLAGS := -Weverything -pthread
+CFLAGS := -Wall -Wextra -pthread
 
 all: fork-join.out rendezvous.out barrier.out reader-writer.out \
 	reader-writer-nostarve.out mutex-nostarve.out

@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Weverything
+CFLAGS = -Wall -Wextra
 
 all: stat.out myls.out mytail.out myfind.out
 

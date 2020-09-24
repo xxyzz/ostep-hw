@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Weverything -pthread
+CFLAGS = -Wall -Wextra -pthread
 
 all: UDP-client.out UDP-server.out
 

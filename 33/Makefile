@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Weverything
+CFLAGS = -Wall -Wextra
 UNAME := $(shell uname -s)
 ifeq ($(UNAME), Linux)
 	CFLAGS += -lrt  # Linux needs it for aio, BSD doesn't

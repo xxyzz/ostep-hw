@@ -1,2 +1,2 @@
 mem.out: mem.c
-	clang -o $@ $< -Weverything
+	clang -o $@ $< -Wall -Wextra

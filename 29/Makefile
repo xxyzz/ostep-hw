@@ -1,6 +1,6 @@
 CC := clang
 OSFLAG := -D $(shell uname -s)
-CFLAGS := -Weverything -pthread
+CFLAGS := -Wall -Wextra -pthread
 
 all: approximate_counter.out queue.out simple_counter.out \
 	standard_list.out hand_over_hand.out btree.out

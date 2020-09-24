@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Weverything
+CFLAGS = -Wall -Wextra
 TARGETS := $(foreach i,$(shell seq 9),$i.out)
 
 all: $(TARGETS)
