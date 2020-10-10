@@ -12,6 +12,7 @@ This program, `mlfq.py`, allows you to see how the MLFQ scheduler presented in t
     $ ./mlfq.py -s 0 -n 2 -j 2 -m 20 -M 0 -c
     $ ./mlfq.py -s 1 -n 2 -j 2 -m 20 -M 0 -c
     ```
+
 2. How would you run the scheduler to reproduce each of the examples in the chapter?
 
     ```
@@ -22,13 +23,13 @@ This program, `mlfq.py`, allows you to see how the MLFQ scheduler presented in t
     $ ./mlfq.py -n 3 -q 10 -l 0,180,0:100,20,0 -c
 
     // Figure 8.4 A Mixed I/O-intensive and CPU-intensive Workload
-    $ ./mlfq.py -n 3 -Q 10,10,5 -l 0,175,0:50,25,1 -i 5 -S -c
+    $ ./mlfq.py -n 3 -q 10 -l 0,175,0:50,25,1 -i 5 -S -c
 
     // Figure 8.5 without priority boost
-    $ ./mlfq.py -n 3 -q 10 -l 0,120,0:100,50,5:100,50,5 -i 5 -S -c
+    $ ./mlfq.py -n 3 -q 10 -l 0,120,0:100,50,1:100,50,1 -i 1 -S -c
 
     // Figure 8.5 with priority boost
-    $ ./mlfq.py -n 3 -q 10 -l 0,120,0:100,50,5:100,50,5 -i 5 -S -B 50 -c
+    $ ./mlfq.py -n 3 -q 10 -l 0,120,0:100,50,1:100,50,1 -i 1 -S -B 50 -c
 
     // Figure 8.6 without gaming tolerance
     $ ./mlfq.py -n 3 -q 10 -i 1 -S -l 0,200,0:80,100,9 -c
@@ -39,6 +40,7 @@ This program, `mlfq.py`, allows you to see how the MLFQ scheduler presented in t
     // Figure 8.7 Lower Priority, Longer Quanta
     $ ./mlfq.py -n 3 -a 2 -Q 10,20,40 -l 0,200,0:0,200,0 -c
     ```
+
 3. How would you configure the scheduler parameters to behave just like a round-robin scheduler?
 
     time slice <= (max job length / jobs number)
@@ -48,9 +50,14 @@ This program, `mlfq.py`, allows you to see how the MLFQ scheduler presented in t
     ```
     $ ./mlfq.py -n 3 -q 10 -l 0,50,0:0,50,9 -i 1 -S -c
     ```
+
 5. Given a system with a quantum length of 10ms in its highest queue, how often would you have to boost jobs back to the highest priority level (with the `-B` flag) in order to guarantee that a single long-running (and potentially-starving) job gets at least 5% of the CPU?
 
-    50ms
+    200ms
+
+    ```
+    $ ./mlfq.py -n 3 -q 10 -l 0,200,0:0,200,1:0,200,1 -i 1 -S -B 200 -c
+    ```
 
 6. One question that arises in scheduling is which end of a queue to add a job that just finished I/O; the -I flag changes this behavior for this scheduling simulator. Play around with some workloads and see if you can see the effect of this flag.
 
