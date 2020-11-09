@@ -6,3 +6,11 @@
 *.cgi
 *.dSYM
 .ipynb_checkpoints
+
+# emacs files
+*~
+.\#*
+\#*\#
+
+# vmd preview
+*.tmp
