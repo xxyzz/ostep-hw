@@ -33,9 +33,9 @@ This program, `scheduler.py`, allows you to see how different schedulers perform
 3. Now do the same, but also with the RR scheduler and a time-slice of 1.
 
     ```
-    $ ./scheduler.py -p RR -q 1 -l 200,200,200 -c
+    $ ./scheduler.py -p RR -q 1 -l 100,200,300 -c
     response time: 0, 1, 2
-    turnaround time: 598, 599, 600
+    turnaround time: 298, 499, 600
     ```
 4. For what types of work loads does SJF deliver the same turnaround times as FIFO?
 
