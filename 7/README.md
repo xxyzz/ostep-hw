@@ -37,6 +37,7 @@ This program, `scheduler.py`, allows you to see how different schedulers perform
     response time: 0, 1, 2
     turnaround time: 298, 499, 600
     ```
+
 4. For what types of work loads does SJF deliver the same turnaround times as FIFO?
 
     Jobs are in ascending order by length.
