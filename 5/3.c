@@ -16,8 +16,8 @@ int main() {
     fprintf(stderr, "fork failed\n");
     exit(EXIT_FAILURE);
   } else if (rc == 0) {
-    kill(parent_pid, SIGCONT);
     printf("hello\n");
+    kill(parent_pid, SIGCONT);
   } else {
     sigaction(SIGCONT, &act, NULL);
     pause();
