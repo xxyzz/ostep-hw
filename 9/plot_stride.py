@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -48,7 +49,7 @@ for i in range(30):
 
             if jobs == 0:
                 break
-        
+
         u = round(finishTime[0] / finishTime[1], 2)
         uList[jobLength - 1] += u
 

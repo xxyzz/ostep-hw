@@ -10,9 +10,7 @@
 
 - [Clang](https://clang.llvm.org/)/[GCC](https://gcc.gnu.org/), [LLDB](https://lldb.llvm.org/)/[GDB](https://www.gnu.org/software/gdb/), [Valgrind](http://valgrind.org/), AWK
 
-- Python: run simulations from the book
-
-- [Anaconda Python 3](https://www.anaconda.com/distribution/#download-section): plot
+- [Python](https://www.python.org): run simulations from the book and plot
 
 - 🐈
 

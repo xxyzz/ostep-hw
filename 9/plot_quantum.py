@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -14,14 +15,14 @@ for i in range(30):
         runTotal = 200
         jobs = 2
         jobList = [[0, 100, 100], [1, 100, 100]]
-    
+
         clock = 0
         finishTime = []
         # run jobs
         for k in range(runTotal):
             r = int(random.random() * 1000001)
             winner = int(r % tickTotal)
-        
+
             current = 0
             wjob = 0
             wrun = 0
@@ -50,7 +51,7 @@ for i in range(30):
 
             if jobs == 0:
                 break
-        
+
         u = round(finishTime[0] / finishTime[1], 2)
         uList[quantum - 1] += u
 

@@ -1,5 +1,5 @@
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 df = pd.read_csv("tests-out/1.out", header=None)
 

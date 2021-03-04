@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 
 data = np.loadtxt(sys.stdin)
 pages = len(data)
@@ -13,7 +14,7 @@ plt.plot(a, data[:, 0], marker='o', color='orange')
 plt.plot(a, data[:, 1], marker='o')
 plt.plot(a, data[:, 2], marker='o')
 plt.margins(0)
-plt.xticks(a, x, rotation=-20, fontsize='x-small') # evenly spaced
+plt.xticks(a, x, rotation=-20, fontsize='x-small')  # evenly spaced
 plt.xlabel('Number Of Pages')
 plt.ylabel('Time Per Access (ns)')
 title = 'TLB Size Measurement(single CPU)'

@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 
 matrix = np.loadtxt(sys.stdin)
 

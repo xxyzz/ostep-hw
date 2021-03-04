@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
-import os
+# import os
+
 # import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,7 @@ hitRates = [
 # for cacheSize in cacheSizes:
 #     hitRate = []
 #     for policy in policies:
-#         result = subprocess.run(["./paging-policy.py", "-c", "-p", policy, 
+#         result = subprocess.run(["./paging-policy.py", "-c", "-p", policy,
 #             "-f", "./vpn.txt", "-C", str(cacheSize)], stdout=subprocess.PIPE)
 #         result = result.stdout.decode('utf-8')
 #         hitRate.append(result)
