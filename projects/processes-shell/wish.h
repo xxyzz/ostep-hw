@@ -1,7 +1,14 @@
 #include <pthread.h> // pthread_create, pthread_join
+#include <regex.h>   // regcomp, regexec, regfree
 #include <stdio.h>   // fopen, fclose, fileno, getline, feof
 #include <string.h>  // strlen, strsep, strcat, strdup, strcmp
 #include <unistd.h>  // STDERR_FILENO, fork, exec, access, exit, chdir
+
+#ifdef REG_ENHANCED  // macOS: man re_format
+#  define REG_CFLAGS REG_EXTENDED | REG_NOSUB | REG_ENHANCED
+#else
+#  define REG_CFLAGS REG_EXTENDED | REG_NOSUB
+#endif
 
 #define INTERACTIVE_MODE 1
 #define BATCH_MODE 2

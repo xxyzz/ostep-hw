@@ -50,7 +50,7 @@ void *parseInput(void *arg) {
   if (commandLine != NULL) {
     // contain white space in the middle or ">"
     regex_t reg;
-    if (regcomp(&reg, "\\S\\s+\\S", REG_EXTENDED) != 0) {
+    if (regcomp(&reg, "\\S\\s+\\S", REG_CFLAGS) != 0) {
       printError();
       regfree(&reg);
       return NULL;
