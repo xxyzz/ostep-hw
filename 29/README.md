@@ -20,6 +20,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
 
     ```
     // check CPU numbers
+    $ nproc
     // Linux
     $ cat /proc/cpuinfo
     // FreeBSD, macOS
