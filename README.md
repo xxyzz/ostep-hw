@@ -1,16 +1,22 @@
 # OSTEP-HW
 
-[Operating Systems: Three Easy Pieces](http://pages.cs.wisc.edu/~remzi/OSTEP) homeworks
+[Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP) homework solutions
 
-[CS-537 videos](http://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Discussion/videos.html)
+[CS-537 videos](https://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/Discussion/videos.html)
 
 ## Requirements
 
 - Unix-like operating system
 
-- [Clang](https://clang.llvm.org/)/[GCC](https://gcc.gnu.org/), [LLDB](https://lldb.llvm.org/)/[GDB](https://www.gnu.org/software/gdb/), [Valgrind](http://valgrind.org/), AWK
+- [Clang](https://clang.llvm.org)/[GCC](https://gcc.gnu.org)
 
-- [Python](https://www.python.org): run simulations from the book and plot
+- [LLDB](https://lldb.llvm.org)/[GDB](https://www.gnu.org/software/gdb)
+
+- [Valgrind](https://valgrind.org)
+
+- [Gawk](https://www.gnu.org/software/gawk)
+
+- [Python](https://www.python.org)
 
 - 🐈
 
@@ -36,9 +42,9 @@ C/Linux Projects and Kernel Hacking Projects (xv6)
 
 10. [Multiprocessor Scheduling (Advanced)](./10)
 
-11. ~~Summary Dialogue on CPU Virtualization~~
+11. Summary Dialogue on CPU Virtualization
 
-12. ~~A Dialogue on Memory Virtualization~~
+12. A Dialogue on Memory Virtualization
 
 13. [The Abstraction: Address Spaces](./13)
 
@@ -98,9 +104,9 @@ C/Linux Projects and Kernel Hacking Projects (xv6)
 
 45. [Data Integrity and Protection](./45)
 
-46. ~~Summary Dialogue on Persistence~~
+46. Summary Dialogue on Persistence
 
-47. ~~A Dialogue on Distribution~~
+47. A Dialogue on Distribution
 
 48. [Distributed Systems](./48)
 

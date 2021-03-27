@@ -79,9 +79,9 @@ In this part of the homework, you’ll write some of your own code to implement 
 
 4. Read about the 16-bit CRC and then implement it. Test it on a number of different inputs to ensure that it works. How is its performance as compared to the simple XOR and Fletcher? How about its checking ability?
 
-    [A Painless Guide to CRC Error Detection Algorithms](http://www.ross.net/crc/download/crc_v3.txt)
+    [A Painless Guide to CRC Error Detection Algorithms](http://ross.net/crc/download/crc_v3.txt)
 
-    [Computer Networks Fifth Edition(chapter 3.2.2 p.213-215)](http://iips.icci.edu.iq/images/exam/Computer-Networks---A-Tanenbaum---5th-edition.pdf)
+    Computer Networks Fifth Edition chapter 3.2.2
 
     [CRC16-CCITT](http://srecord.sourceforge.net/crc16-ccitt.html)
 
