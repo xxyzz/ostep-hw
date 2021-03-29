@@ -323,9 +323,9 @@ Time (seconds): 0.191190
 Time (seconds): 0.251097
 ```
 
-4. Build a version of a linked list that uses hand-over-hand locking[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf), as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?
+4. Build a version of a linked list that uses hand-over-hand locking[[MS04](https://www.cs.tau.ac.il/~shanir/concurrent-data-structures.pdf)], as cited in the chapter. You should read the paper first to understand how it works, and then implement it. Measure its performance. When does a hand-over-hand list work better than a standard list as shown in the chapter?
 
-    On the quad-core mac and four processors pi 3, hand-over-hand list runs faster with multiple threads(three and four threads). On the dual-core FreeBSD, it's always slower.
+    Never?
 
 5. Pick your favorite interesting data structure, such as a B-tree or other slightly more interested structure. Implement it, and start with a simple locking strategy such as a single lock. Measure its performance as the number of concurrent threads increases.
 
