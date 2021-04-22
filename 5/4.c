@@ -20,7 +20,7 @@ int main() {
 
     execv("/bin/ls", argvs);
     execvp("ls", argvs);
-    // execvpe("ls", argv, envp);    // GNU extension
+    // execvpe("ls", argvs, envp);    // GNU extension
   }
   return 0;
 }
