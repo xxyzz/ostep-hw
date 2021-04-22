@@ -41,7 +41,8 @@ int main() {
       }
       write(STDOUT_FILENO, "\n", 1);
       close(pipefd[0]);
-    }
+    } else
+      waitpid(rc[0], NULL, 0);
   }
   return 0;
 }

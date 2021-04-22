@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <stdlib.h>  // exit
-#include <unistd.h>  // fork
+#include <stdlib.h> // exit
+#include <sys/wait.h>
+#include <unistd.h> // fork
 
 int main() {
   int x = 100;
@@ -15,6 +16,7 @@ int main() {
   } else {
     x = 102;
     printf("x in parent process: %d\n", x);
+    wait(NULL);
   }
   return 0;
 }

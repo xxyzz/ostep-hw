@@ -21,6 +21,7 @@ int main() {
   } else {
     sigaction(SIGCONT, &act, NULL);
     pause();
+    wait(NULL);
   }
   return 0;
 }
