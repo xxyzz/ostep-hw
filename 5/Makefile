@@ -1,4 +1,4 @@
-CC = clang
+CC ?= clang
 CFLAGS = -Wall -Wextra
 TARGETS := $(foreach i,$(shell seq 9),$i.out)
 
