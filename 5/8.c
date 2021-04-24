@@ -11,8 +11,6 @@
     exit(EXIT_FAILURE);                                                        \
   } while (0)
 
-#define BUFFSIZE 4096
-
 int main() {
   int pipefd[2];
   if (pipe(pipefd) == -1)
@@ -23,8 +21,8 @@ int main() {
   if (rc[0] < 0)
     errExit("fork");
   else if (rc[0] == 0) {
-    close(pipefd[0]); /* Close unused read end */
-    if (pipefd[1] != STDOUT_FILENO) {
+    close(pipefd[0]);                 /* Close unused read end */
+    if (pipefd[1] != STDOUT_FILENO) { // APUE 15.2
       if (dup2(pipefd[1], STDOUT_FILENO) != STDOUT_FILENO)
         errExit("dup2");
       close(pipefd[1]);
@@ -41,8 +39,8 @@ int main() {
           errExit("dup2");
         close(pipefd[0]);
       }
-      char buf[BUFFSIZE];
-      read(STDIN_FILENO, buf, BUFFSIZE);
+      char buf[BUFSIZ];
+      read(STDIN_FILENO, buf, BUFSIZ);
       printf("Second child print: %s\n", buf);
     } else {
       if (waitpid(rc[0], NULL, 0) == -1)
