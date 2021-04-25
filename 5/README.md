@@ -35,44 +35,20 @@ In this homework, you are to gain some familiarity with the process management A
 1. Write a program that calls `fork()`. Before calling `fork()`, have the main process access a variable (e.g., `x`) and set its value to something (e.g., `100`). What value is the variable in the child process? What happens to the variable when both the child and parent change the value of `x`?
 
     - The value is the variable in the child process. 
-    
+
     - They both change the value in their own process.
 
 2. Write a program that opens a file (with the `open()` system call) and then calls `fork()` to create a new process. Can both the child and parent access the file descriptor returned by `open()`? What happens when they are writing to the file concurrently, i.e., at the same time?
 
     They both can access the file descriptor.
 
-    Most times, the parent writes before the child:
-
-    ```
-    file descriptor in parent prosess: 3
-    file descriptor in child process: 3
-
-    file contents:
-    First line.
-    parent writes a line.
-    First line.
-    child writes a line.
-    ```
-
-    Sometimes they overwrite each other(I only get this result on FreeBSD so far):
-
-    ```
-    file descriptor in parent prosess: 3
-    file descriptor in child process: 3
-
-    file contents:
-    First line.
-    First line.
-    child writes a line.
-    parent writes a line.
-    ```
-
-    I think it depends on the system scheduler.
+    The final result is up to the system scheduler.
 
 3. Write another program using `fork()`. The child process should print “hello”; the parent process should print “goodbye”. You should try to ensure that the child process always prints first; can you do this *without* calling **wait()** in the parent?
 
     - Using `kill()` to send `SIGCONT` signal to parent process.
+
+    - Read from `pipe`.
 
 4. Write a program that calls `fork()` and then calls some form of `exec()` to
 run the program `/bin/ls`. See if you can try all of the variants of `exec()`, including(on Linux)`execl()`, `execle()`, `execlp()`, `execv()`, `execvp()`, and `execvpe()`. Why do you think there are so many variants of the same basic call?

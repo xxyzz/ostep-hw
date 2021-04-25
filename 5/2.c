@@ -1,40 +1,48 @@
-#include <fcntl.h>    // open
-#include <stdio.h>    // fgetc, fopen, fclose
-#include <stdlib.h>   // exit
-#include <string.h>   // strlen
-#include <sys/stat.h> // S_IRWXU
+#include <stdio.h>  // fread, fopen, fclose
+#include <stdlib.h> // exit
 #include <sys/wait.h>
-#include <unistd.h> // fork, write, close
+#include <unistd.h> // fork
+
+#define errExit(msg)                                                           \
+  do {                                                                         \
+    perror(msg);                                                               \
+    exit(EXIT_FAILURE);                                                        \
+  } while (0)
+
+static void write_to_file(FILE *f, char *str) {
+  char *ptr;
+  int c;
+  for (ptr = str; (c = *ptr++) != 0;) {
+    if (fputc(c, f) != c)
+      errExit("fputc");
+    if (fflush(f) == EOF)
+      errExit("fflush");
+  }
+}
 
 int main() {
-  int fd = open("./2.txt", O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-  int rc = fork();
-  write(fd, "First line.\n", strlen("First line.\n"));
+  FILE *f = fopen("./2.txt", "w+");
+  if (f == NULL)
+    errExit("fopen");
 
-  if (rc < 0) {
-    // fork failed; exit
-    fprintf(stderr, "fork failed\n");
-    exit(EXIT_FAILURE);
-  } else if (rc == 0) {
-    write(fd, "child writes a line.\n", strlen("child writes a line.\n"));
-    printf("file descriptor in child process: %d\n", fd);
+  pid_t cpid = fork();
+  if (cpid < 0)
+    errExit("fork");
+  else if (cpid == 0) {
+    write_to_file(f, "child says hello.\n");
   } else {
-    write(fd, "parent writes a line.\n", strlen("parent writes a line.\n"));
-    printf("file descriptor in parent prosess: %d\n", fd);
+    write_to_file(f, "parent says goodbye.\n");
 
-    if (wait(NULL) == -1) {
-      fprintf(stderr, "wait failed\n");
-      exit(EXIT_FAILURE);
-    }
-    FILE *fp;
-    fp = fopen("./2.txt", "r");
-    int ch;
-    printf("\nfile contents: \n");
-    while ((ch = fgetc(fp)) != EOF)
-      printf("%c", ch);
-    fclose(fp);
+    if (wait(NULL) == -1)
+      errExit("wait");
+
+    char buf[BUFSIZ];
+    printf("file contents:\n");
+    if (fseek(f, 0, 0) == -1)
+      errExit("fseek");
+    fread(buf, BUFSIZ, 1, f);
+    printf("%s", buf);
+    fclose(f);
   }
-
-  close(fd);
   return 0;
 }
