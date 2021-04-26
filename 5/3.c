@@ -1,7 +1,8 @@
 #include <signal.h> // kill, sigaction
 #include <stdio.h>
 #include <stdlib.h> // exit
-#include <unistd.h> // getppid, fork, pause, pipe, getopt
+#include <unistd.h> // getppid, fork, pause, pipe
+#include <getopt.h>
 
 #define errExit(msg)                                                           \
   do {                                                                         \
@@ -67,13 +68,17 @@ static void wait_with_pipe() {
 }
 
 _Noreturn static void usage(char *name) {
-  fprintf(stderr, "Usage: %s [-s] [-p]\n", name);
+  fprintf(stderr, "Usage: %s [-s|--signal] [-p|--pipe]\n", name);
   exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[]) {
   int opt;
-  if ((opt = getopt(argc, argv, "sp")) != -1) {
+  struct option options[] = {
+    {"signal", no_argument, NULL, 's'},
+    {"pipe", no_argument, NULL, 'p'}
+  };
+  if ((opt = getopt_long(argc, argv, "sp", options, NULL)) != -1) {
     switch (opt) {
     case 's':
       wait_with_signal();

@@ -9,7 +9,7 @@
     exit(EXIT_FAILURE);                                                        \
   } while (0)
 
-static void write_to_file(FILE *f, char *str) {
+static void write_to_file(FILE *f, char *str) { // APUE 8.9
   char *ptr;
   int c;
   for (ptr = str; (c = *ptr++) != 0;) {
