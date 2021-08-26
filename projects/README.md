@@ -19,6 +19,10 @@ See the author's repo(https://github.com/remzi-arpacidusseau/ostep-projects) for
 - [Web Server](./concurrency-webserver)
 - [Parallel Zip](./concurrency-pzip)
 
+### File Systems
+
+- [File System Checker](./filesystems-checker)
+
 ## Kernel Hacking Projects (xv6)
 
 ### Initial Projects

@@ -9,16 +9,23 @@ $ git clone git@github.com:mit-pdos/xv6-public.git
 
 // install dependencies
 $ brew install gdb x86_64-elf-gcc qemu
+```
 
-// edit Makefile
-// line 32
-TOOLPREFIX = x86_64-elf-
-// line 220
-CPUS := 1
+Edit Makefile:
+```diff
+@@ -29,7 +29,7 @@ OBJS = \
+ 	vm.o\
+ 
+ # Cross-compiling (e.g., on Mac OS X)
+-# TOOLPREFIX = i386-jos-elf
++TOOLPREFIX = x86_64-elf-
 
-// edit kernel.ld(not needed anymore, don't know why
-// it broken and how the fix works)
-// https://github.com/mit-pdos/xv6-public/pull/115
+@@ -217,7 +217,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
 ```
 
 [What's Cross-Compiler(x86\_64-elf-gcc) and why I need it?](https://wiki.osdev.org/GCC_Cross-Compiler#Introduction)
