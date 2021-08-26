@@ -35,7 +35,8 @@ void check_inode_type(int type) {
   }
 }
 
-void check_address_range(uint addr, bool direct, uint data_start) {
+void check_address(uint addr, bool direct, uint data_start, uchar *bmap,
+                   uchar bmap_mark[]) {
   if ((addr < data_start && addr != 0) || addr >= FSSIZE) {
     if (direct)
       fprintf(stderr, "ERROR: bad direct address in inode.\n");
@@ -43,6 +44,18 @@ void check_address_range(uint addr, bool direct, uint data_start) {
       fprintf(stderr, "ERROR: bad indirect address in inode.\n");
     exit(EXIT_FAILURE);
   }
+
+  if (addr == 0)
+    return;
+  // error 5
+  uint index = addr - data_start;
+  uint b = 0x1 << (index % 8);
+  if (!(bmap[index / 8] & b)) {
+    fprintf(stderr,
+            "ERROR: address used by inode but marked free in bitmap.\n");
+    exit(EXIT_FAILURE);
+  }
+  bmap_mark[index / 8] |= b;
 }
 
 int main(int argc, char *argv[]) {
@@ -77,6 +90,9 @@ int main(int argc, char *argv[]) {
   int data_start = FSSIZE - sb.nblocks;
   struct dinode inodes[sb.ninodes];
   memmove(inodes, imgp + sb.inodestart * BSIZE, sizeof(inodes));
+  uchar bmap[BSIZE];
+  uchar bmap_mark[BSIZE] = {0};
+  memmove(bmap, imgp + sb.bmapstart * BSIZE, BSIZE);
   for (int i = ROOTINO; i < sb.ninodes; i++) {
     struct dinode inode = inodes[i];
     check_inode_type(inode.type); // error 1
@@ -85,13 +101,15 @@ int main(int argc, char *argv[]) {
     if (inode.type != 0) {
       for (int j = 0; j < NDIRECT + 1; j++) {
         if (j < NDIRECT)
-          check_address_range(inode.addrs[j], true, data_start);
+          check_address(inode.addrs[j], true, data_start, bmap, bmap_mark);
         else {
           uint indirect[NINDIRECT];
+          check_address(inode.addrs[NDIRECT], false, data_start, bmap,
+                        bmap_mark);
           memmove(indirect, imgp + inode.addrs[NDIRECT] * BSIZE,
                   sizeof(indirect));
           for (int k = 0; k < NINDIRECT; k++)
-            check_address_range(indirect[k], false, data_start);
+            check_address(indirect[k], false, data_start, bmap, bmap_mark);
         }
       }
     }
@@ -124,6 +142,17 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "ERROR: directory not properly formatted.\n");
         exit(EXIT_FAILURE);
       }
+    }
+  }
+
+  // error 6
+  for (int j = 0; j < BSIZE; j += 8) {
+    uint a = bmap[j / 8];
+    uint b = bmap_mark[j / 8];
+    if (a ^ b) {
+      fprintf(stderr,
+              "ERROR: bitmap marks block in use but it is not in use.\n");
+      exit(EXIT_FAILURE);
     }
   }
 
