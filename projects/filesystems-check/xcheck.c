@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>    // fopen, fclose, fileno
 #include <stdlib.h>   // exit
-#include <string.h>   // memmove, strcmp
+#include <string.h>   // memmove, strcmp, memset
 #include <sys/mman.h> // mmap, munmap
 
 #define IMG_SIZE (FSSIZE * BSIZE)
@@ -101,7 +101,9 @@ int main(int argc, char *argv[]) {
   uchar bmap[NBMAP];
   uchar bmap_mark[NBMAP] = {0};
   uchar inode_dir[sb.ninodes];
+  uint dir_links[sb.ninodes];
   memset(inode_dir, 0, sizeof(inode_dir));
+  memset(dir_links, 0, sizeof(dir_links));
   memmove(bmap, imgp + sb.bmapstart * BSIZE, sizeof(bmap));
   for (int i = ROOTINO; i < sb.ninodes; i++) {
     struct dinode inode = inodes[i];
@@ -144,8 +146,10 @@ int main(int argc, char *argv[]) {
             root_exist = true;
         }
         inode_dir[de.inum] = 1;
-        if (inodes[de.inum].type == T_FILE || inodes[de.inum].type == T_DIR)
+        if (inodes[de.inum].type == T_FILE)
           inodes[de.inum].nlink--;
+        else if (inodes[de.inum].type == T_DIR && i != de.inum)
+          dir_links[de.inum]++;
       }
       if (i == ROOTINO && !root_exist) {
         fprintf(stderr, "ERROR: root directory does not exist.\n");
@@ -170,21 +174,21 @@ int main(int argc, char *argv[]) {
   }
 
   for (int j = ROOTINO; j < sb.ninodes; j++) {
-    if (inodes[j].type != 0 && inode_dir[j] == 0) {  // error 9
+    if (inodes[j].type != 0 && inode_dir[j] == 0) { // error 9
       fprintf(stderr,
               "ERROR: inode marked use but not found in a directory.\n");
       exit(EXIT_FAILURE);
     }
-    if (inode_dir[j] == 1 && inodes[j].type == 0) {  // error 10
+    if (inode_dir[j] == 1 && inodes[j].type == 0) { // error 10
       fprintf(stderr,
               "ERROR: inode referred to in directory but marked free.\n");
       exit(EXIT_FAILURE);
     }
-    if (inodes[j].type == T_FILE && inodes[j].nlink > 0) {  // error 11
+    if (inodes[j].type == T_FILE && inodes[j].nlink > 0) { // error 11
       fprintf(stderr, "ERROR: bad reference count for file.\n");
       exit(EXIT_FAILURE);
     }
-    if (inodes[j].type == T_DIR && inodes[j].nlink > 0) {  // error 12
+    if (inodes[j].type == T_DIR && dir_links[j] > 1) { // error 12
       fprintf(stderr,
               "ERROR: directory appears more than once in file system.\n");
       exit(EXIT_FAILURE);
