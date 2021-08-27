@@ -9,7 +9,8 @@
 #include <string.h>   // memmove, strcmp
 #include <sys/mman.h> // mmap, munmap
 
-#define IMG_SIZE FSSIZE *BSIZE
+#define IMG_SIZE (FSSIZE * BSIZE)
+#define NBMAP FSSIZE / 8
 
 void read_inode_data(struct dinode inode, void *imgp, void *destp, int offset,
                      int size) {
@@ -55,6 +56,13 @@ void check_address(uint addr, bool direct, uint data_start, uchar *bmap,
             "ERROR: address used by inode but marked free in bitmap.\n");
     exit(EXIT_FAILURE);
   }
+  if (bmap_mark[index / 8] & b) { // error 6 & 7
+    if (direct)
+      fprintf(stderr, "ERROR: direct address used more than once.\n");
+    else
+      fprintf(stderr, "ERROR: indirect address used more than once.\n");
+    exit(EXIT_FAILURE);
+  }
   bmap_mark[index / 8] |= b;
 }
 
@@ -90,9 +98,11 @@ int main(int argc, char *argv[]) {
   int data_start = FSSIZE - sb.nblocks;
   struct dinode inodes[sb.ninodes];
   memmove(inodes, imgp + sb.inodestart * BSIZE, sizeof(inodes));
-  uchar bmap[BSIZE];
-  uchar bmap_mark[BSIZE] = {0};
-  memmove(bmap, imgp + sb.bmapstart * BSIZE, BSIZE);
+  uchar bmap[NBMAP];
+  uchar bmap_mark[NBMAP] = {0};
+  uchar inode_dir[sb.ninodes];
+  memset(inode_dir, 0, sizeof(inode_dir));
+  memmove(bmap, imgp + sb.bmapstart * BSIZE, sizeof(bmap));
   for (int i = ROOTINO; i < sb.ninodes; i++) {
     struct dinode inode = inodes[i];
     check_inode_type(inode.type); // error 1
@@ -133,6 +143,9 @@ int main(int argc, char *argv[]) {
           if (i == ROOTINO && de.inum == ROOTINO)
             root_exist = true;
         }
+        inode_dir[de.inum] = 1;
+        if (inodes[de.inum].type == T_FILE || inodes[de.inum].type == T_DIR)
+          inodes[de.inum].nlink--;
       }
       if (i == ROOTINO && !root_exist) {
         fprintf(stderr, "ERROR: root directory does not exist.\n");
@@ -146,12 +159,34 @@ int main(int argc, char *argv[]) {
   }
 
   // error 6
-  for (int j = 0; j < BSIZE; j += 8) {
+  for (int j = 0; j < NBMAP; j += 8) {
     uint a = bmap[j / 8];
     uint b = bmap_mark[j / 8];
     if (a ^ b) {
       fprintf(stderr,
               "ERROR: bitmap marks block in use but it is not in use.\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  for (int j = ROOTINO; j < sb.ninodes; j++) {
+    if (inodes[j].type != 0 && inode_dir[j] == 0) {  // error 9
+      fprintf(stderr,
+              "ERROR: inode marked use but not found in a directory.\n");
+      exit(EXIT_FAILURE);
+    }
+    if (inode_dir[j] == 1 && inodes[j].type == 0) {  // error 10
+      fprintf(stderr,
+              "ERROR: inode referred to in directory but marked free.\n");
+      exit(EXIT_FAILURE);
+    }
+    if (inodes[j].type == T_FILE && inodes[j].nlink > 0) {  // error 11
+      fprintf(stderr, "ERROR: bad reference count for file.\n");
+      exit(EXIT_FAILURE);
+    }
+    if (inodes[j].type == T_DIR && inodes[j].nlink > 0) {  // error 12
+      fprintf(stderr,
+              "ERROR: directory appears more than once in file system.\n");
       exit(EXIT_FAILURE);
     }
   }
