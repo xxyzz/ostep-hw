@@ -1,0 +1,375 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..de07280 100644
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,7 @@ OBJS = \
+ 	vm.o\
+ 
+ # Cross-compiling (e.g., on Mac OS X)
+-# TOOLPREFIX = i386-jos-elf
++TOOLPREFIX = x86_64-elf-
+ 
+ # Using native tools (e.g., on X86 Linux)
+ #TOOLPREFIX = 
+@@ -153,7 +153,7 @@ _%: %.o $(ULIB)
+ _forktest: forktest.o $(ULIB)
+ 	# forktest has less library code linked in - needs to be small
+ 	# in order to be able to max out the proc table.
+-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
++	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o umalloc.o
+ 	$(OBJDUMP) -S _forktest > forktest.asm
+ 
+ mkfs: mkfs.c fs.h
+@@ -181,6 +181,7 @@ UPROGS=\
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
++  _test_thread\
+ 
+ fs.img: mkfs README $(UPROGS)
+ 	./mkfs fs.img README $(UPROGS)
+@@ -217,7 +218,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+ 
+@@ -250,7 +251,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
+ EXTRA=\
+ 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
+ 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
+-	printf.c umalloc.c\
++	printf.c umalloc.c test_thread.c\
+ 	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+ 	.gdbinit.tmpl gdbutil\
+ 
+diff --git a/defs.h b/defs.h
+index 82fb982..4336709 100644
+--- a/defs.h
++++ b/defs.h
+@@ -106,6 +106,8 @@ int             pipewrite(struct pipe*, char*, int);
+ int             cpuid(void);
+ void            exit(void);
+ int             fork(void);
++int             clone(void (*)(void *, void *), void *, void *, void *);
++int             join(void **);
+ int             growproc(int);
+ int             kill(int);
+ struct cpu*     mycpu(void);
+diff --git a/proc.c b/proc.c
+index 806b1b1..2ec6ce6 100644
+--- a/proc.c
++++ b/proc.c
+@@ -221,6 +221,94 @@ fork(void)
+   return pid;
+ }
+ 
++int clone(void (*fcn)(void *, void *), void *arg1, void *arg2, void *stack) {
++  int i, pid;
++  struct proc *np;
++  struct proc *curproc = myproc();
++
++  // Allocate process.
++  if ((np = allocproc()) == 0) {
++    return -1;
++  }
++
++  np->pgdir = curproc->pgdir;  // same page table
++  np->sz = curproc->sz;
++  np->parent = curproc;
++  *np->tf = *curproc->tf;
++
++  np->tf->eip = (uint)fcn;  // eip register: instruction pointer
++  // copy args to stack
++  np->usp = stack;
++  uint *sp = stack + PGSIZE;
++  sp--;
++  *sp = (uint)arg2;
++  sp--;
++  *sp = (uint)arg1;
++  sp--;
++  *sp = 0xffffffff;        // fake return PC
++  np->tf->esp = (uint)sp;  // esp register: stack pointer
++
++  // Clear %eax so that fork returns 0 in the child.
++  np->tf->eax = 0;
++
++  for (i = 0; i < NOFILE; i++)
++    if (curproc->ofile[i])
++      np->ofile[i] = filedup(curproc->ofile[i]);
++  np->cwd = idup(curproc->cwd);
++
++  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
++
++  pid = np->pid;
++
++  acquire(&ptable.lock);
++  np->state = RUNNABLE;
++  release(&ptable.lock);
++
++  return pid;
++}
++
++int join(void **stack) {
++  struct proc *p;
++  int havethread, pid;
++  struct proc *curproc = myproc();
++
++  acquire(&ptable.lock);
++  for(;;){
++    // Scan through table looking for exited thread.
++    havethread = 0;
++    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
++      if(p->parent != curproc || p->pgdir != curproc->pgdir)
++        continue;
++      havethread = 1;
++      if(p->state == ZOMBIE){
++        // Found one.
++        pid = p->pid;
++        *stack = p->usp;
++        kfree(p->kstack);
++        p->kstack = 0;
++        // freevm(p->pgdir);  free it at wait()
++        p->pid = 0;
++        p->parent = 0;
++        p->name[0] = 0;
++        p->killed = 0;
++        p->state = UNUSED;
++        p->usp = 0;
++        release(&ptable.lock);
++        return pid;
++      }
++    }
++
++    // No point waiting if we don't have any thread.
++    if(!havethread || curproc->killed){
++      release(&ptable.lock);
++      return -1;
++    }
++
++    // Wait for thread to exit.  (See wakeup1 call in proc_exit.)
++    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
++  }
++}
++
+ // Exit the current process.  Does not return.
+ // An exited process remains in the zombie state
+ // until its parent calls wait() to find out it exited.
+@@ -249,12 +337,12 @@ exit(void)
+ 
+   acquire(&ptable.lock);
+ 
+-  // Parent might be sleeping in wait().
++  // Parent might be sleeping in wait() or join().
+   wakeup1(curproc->parent);
+ 
+   // Pass abandoned children to init.
+   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+-    if(p->parent == curproc){
++    if(p->parent == curproc && p->pgdir != curproc->pgdir){
+       p->parent = initproc;
+       if(p->state == ZOMBIE)
+         wakeup1(initproc);
+@@ -275,13 +363,13 @@ wait(void)
+   struct proc *p;
+   int havekids, pid;
+   struct proc *curproc = myproc();
+-  
++
+   acquire(&ptable.lock);
+   for(;;){
+     // Scan through table looking for exited children.
+     havekids = 0;
+     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+-      if(p->parent != curproc)
++      if(p->parent != curproc || p->pgdir == curproc->pgdir)
+         continue;
+       havekids = 1;
+       if(p->state == ZOMBIE){
+@@ -289,7 +377,21 @@ wait(void)
+         pid = p->pid;
+         kfree(p->kstack);
+         p->kstack = 0;
+-        freevm(p->pgdir);
++        // free page table if this is last reference to it
++        struct proc *q, *last_ref = 0;
++        for (q = ptable.proc; q < &ptable.proc[NPROC]; q++) {
++          if (q != p && q->pgdir == p->pgdir) {
++            if (q->state == UNUSED || q->state == ZOMBIE) {
++              last_ref = q;
++            } else {
++              last_ref = 0;
++              break;
++            }
++          }
++        }
++        if (last_ref == p)
++          freevm(p->pgdir);
++        p->pgdir = 0;
+         p->pid = 0;
+         p->parent = 0;
+         p->name[0] = 0;
+diff --git a/proc.h b/proc.h
+index 1647114..b93a2e1 100644
+--- a/proc.h
++++ b/proc.h
+@@ -49,6 +49,7 @@ struct proc {
+   struct file *ofile[NOFILE];  // Open files
+   struct inode *cwd;           // Current directory
+   char name[16];               // Process name (debugging)
++  void *usp;                   // thread user stack pointer
+ };
+ 
+ // Process memory is laid out contiguously, low addresses first:
+diff --git a/syscall.c b/syscall.c
+index ee85261..e6565c3 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -103,6 +103,8 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_clone(void);
++extern int sys_join(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +128,8 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_clone]   sys_clone,
++[SYS_join]    sys_join
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..6b757d1 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,5 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_clone  22
++#define SYS_join   23
+diff --git a/sysproc.c b/sysproc.c
+index 0686d29..8df0eee 100644
+--- a/sysproc.c
++++ b/sysproc.c
+@@ -89,3 +89,21 @@ sys_uptime(void)
+   release(&tickslock);
+   return xticks;
+ }
++
++int sys_clone(void) {
++  char *fcn, *arg1, *arg2, *stack;
++  if (argptr(0, &fcn, sizeof(void (*)(void *, void *))) < 0 ||
++      argptr(1, &arg1, sizeof(void *)) < 0 ||
++      argptr(2, &arg2, sizeof(void *)) < 0 ||
++      argptr(3, &stack, PGSIZE) < 0)
++    return -1;
++
++  return clone((void (*)(void *, void *))fcn, arg1, arg2, stack);
++}
++
++int sys_join(void) {
++  void **stack;
++  if (argptr(0, (char **)&stack, sizeof(void *)) < 0)
++    return -1;
++  return join(stack);
++}
+diff --git a/test_thread.c b/test_thread.c
+new file mode 100644
+index 0000000..f5eff06
+--- /dev/null
++++ b/test_thread.c
+@@ -0,0 +1,23 @@
++#include "types.h"
++#include "user.h"
++
++int best_num = 42;
++
++void thread_func(char *s, int *i) {
++  printf(1, "First arg: %s, second arg: %d\n", s, *i);
++  printf(1, "best_num in thread: %d\n", best_num);
++  best_num = *i;
++  printf(1, "thread pid: %d\n", getpid());
++  exit();
++}
++
++int main() {
++  char *s = "I've tried not to remember no memories";
++  int i = 69;
++  printf(1, "Main thread pid: %d\n", getpid());
++  printf(1, "Before thread_create()\n");
++  thread_create((void (*)(void *, void *))thread_func, s, &i);
++  printf(1, "Returned thread pid: %d\n", thread_join());
++  printf(1, "best_num in main: %d\n", best_num);
++  exit();
++}
+diff --git a/ulib.c b/ulib.c
+index 8e1e1a2..09f28d5 100644
+--- a/ulib.c
++++ b/ulib.c
+@@ -3,6 +3,7 @@
+ #include "fcntl.h"
+ #include "user.h"
+ #include "x86.h"
++#include "mmu.h"  // PGSIZE
+ 
+ char*
+ strcpy(char *s, const char *t)
+@@ -104,3 +105,20 @@ memmove(void *vdst, const void *vsrc, int n)
+     *dst++ = *src++;
+   return vdst;
+ }
++
++int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2) {
++  void *stack = malloc(PGSIZE);
++  if (stack == 0)
++    return -1;
++  int r = clone(start_routine, arg1, arg2, stack);
++  if (r == -1)
++    free(stack);
++  return r;
++}
++
++int thread_join() {
++  void *stack;
++  int r = join(&stack);
++  free(stack);
++  return r;
++}
+diff --git a/user.h b/user.h
+index 4f99c52..15364a5 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,8 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int clone(void (*)(void *, void *), void *, void *, void *);
++int join(void **);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+@@ -37,3 +39,5 @@ void* memset(void*, int, uint);
+ void* malloc(uint);
+ void free(void*);
+ int atoi(const char*);
++int thread_create(void (*)(void *, void *), void *, void *);
++int thread_join();
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..77fac40 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,5 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(clone)
++SYSCALL(join)
