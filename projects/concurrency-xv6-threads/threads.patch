@@ -284,20 +284,29 @@ index 0686d29..8df0eee 100644
 +}
 diff --git a/test_thread.c b/test_thread.c
 new file mode 100644
-index 0000000..f5eff06
+index 0000000..35dd8fc
 --- /dev/null
 +++ b/test_thread.c
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,42 @@
 +#include "types.h"
 +#include "user.h"
 +
 +int best_num = 42;
++int number = 0;
 +
 +void thread_func(char *s, int *i) {
 +  printf(1, "First arg: %s, second arg: %d\n", s, *i);
 +  printf(1, "best_num in thread: %d\n", best_num);
 +  best_num = *i;
 +  printf(1, "thread pid: %d\n", getpid());
++  exit();
++}
++
++void count_func(lock_t *lock, int *loop) {
++  lock_acquire(lock);
++  for (int i = 0; i < *loop; i++)
++    number += 1;
++  lock_release(lock);
 +  exit();
 +}
 +
@@ -309,10 +318,32 @@ index 0000000..f5eff06
 +  thread_create((void (*)(void *, void *))thread_func, s, &i);
 +  printf(1, "Returned thread pid: %d\n", thread_join());
 +  printf(1, "best_num in main: %d\n", best_num);
++
++  lock_t lock;
++  lock_init(&lock);
++  int loop1 = 100;
++  int loop2 = 200;
++  thread_create((void (*)(void *, void *))count_func, &lock, &loop1);
++  thread_create((void (*)(void *, void *))count_func, &lock, &loop2);
++  thread_join();
++  thread_join();
++  printf(1, "number: %d\n", number);
 +  exit();
 +}
+diff --git a/types.h b/types.h
+index e4adf64..286903b 100644
+--- a/types.h
++++ b/types.h
+@@ -2,3 +2,7 @@ typedef unsigned int   uint;
+ typedef unsigned short ushort;
+ typedef unsigned char  uchar;
+ typedef uint pde_t;
++typedef struct __lock_t {
++  int ticket;
++  int turn;
++} lock_t;
 diff --git a/ulib.c b/ulib.c
-index 8e1e1a2..09f28d5 100644
+index 8e1e1a2..8c50aa6 100644
 --- a/ulib.c
 +++ b/ulib.c
 @@ -3,6 +3,7 @@
@@ -323,7 +354,7 @@ index 8e1e1a2..09f28d5 100644
  
  char*
  strcpy(char *s, const char *t)
-@@ -104,3 +105,20 @@ memmove(void *vdst, const void *vsrc, int n)
+@@ -104,3 +105,37 @@ memmove(void *vdst, const void *vsrc, int n)
      *dst++ = *src++;
    return vdst;
  }
@@ -344,8 +375,25 @@ index 8e1e1a2..09f28d5 100644
 +  free(stack);
 +  return r;
 +}
++
++// ticket lock
++void lock_init(lock_t *lock) {
++  lock->ticket = 0;
++  lock->turn = 0;
++}
++
++void lock_acquire(lock_t *lock) {
++  // https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/_005f_005fatomic-Builtins.html
++  int myturn = __atomic_fetch_add(&lock->ticket, 1, __ATOMIC_SEQ_CST);
++  while (lock->turn != myturn)
++    ; // spin
++}
++
++void lock_release(lock_t *lock) {
++  lock->turn += 1;
++}
 diff --git a/user.h b/user.h
-index 4f99c52..15364a5 100644
+index 4f99c52..7b10978 100644
 --- a/user.h
 +++ b/user.h
 @@ -23,6 +23,8 @@ int getpid(void);
@@ -357,12 +405,15 @@ index 4f99c52..15364a5 100644
  
  // ulib.c
  int stat(const char*, struct stat*);
-@@ -37,3 +39,5 @@ void* memset(void*, int, uint);
+@@ -37,3 +39,8 @@ void* memset(void*, int, uint);
  void* malloc(uint);
  void free(void*);
  int atoi(const char*);
 +int thread_create(void (*)(void *, void *), void *, void *);
 +int thread_join();
++void lock_init(lock_t *);
++void lock_acquire(lock_t *);
++void lock_release(lock_t *);
 diff --git a/usys.S b/usys.S
 index 8bfd8a1..77fac40 100644
 --- a/usys.S
