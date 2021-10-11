@@ -1,0 +1,167 @@
+diff --git a/Makefile b/Makefile
+index 09d790c..dec662a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,7 @@ OBJS = \
+ 	vm.o\
+ 
+ # Cross-compiling (e.g., on Mac OS X)
+-# TOOLPREFIX = i386-jos-elf
++TOOLPREFIX = x86_64-elf-
+ 
+ # Using native tools (e.g., on X86 Linux)
+ #TOOLPREFIX = 
+@@ -178,6 +178,7 @@ UPROGS=\
+ 	_rm\
+ 	_sh\
+ 	_stressfs\
++	_test_readcount\
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
+@@ -217,7 +218,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+ 	then echo "-gdb tcp::$(GDBPORT)"; \
+ 	else echo "-s -p $(GDBPORT)"; fi)
+ ifndef CPUS
+-CPUS := 2
++CPUS := 1
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
+ 
+diff --git a/defs.h b/defs.h
+index 82fb982..86d99a1 100644
+--- a/defs.h
++++ b/defs.h
+@@ -156,6 +156,9 @@ int             fetchint(uint, int*);
+ int             fetchstr(uint, char**);
+ void            syscall(void);
+ 
++// sysfile.c
++void            init_readcount_lock(void);
++
+ // timer.c
+ void            timerinit(void);
+ 
+diff --git a/main.c b/main.c
+index 9924e64..98fbf35 100644
+--- a/main.c
++++ b/main.c
+@@ -33,6 +33,7 @@ main(void)
+   ideinit();       // disk 
+   startothers();   // start other processors
+   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
++  init_readcount_lock();
+   userinit();      // first user process
+   mpmain();        // finish this processor's setup
+ }
+diff --git a/syscall.c b/syscall.c
+index ee85261..bcd18ef 100644
+--- a/syscall.c
++++ b/syscall.c
+@@ -103,6 +103,7 @@ extern int sys_unlink(void);
+ extern int sys_wait(void);
+ extern int sys_write(void);
+ extern int sys_uptime(void);
++extern int sys_getreadcount(void);
+ 
+ static int (*syscalls[])(void) = {
+ [SYS_fork]    sys_fork,
+@@ -126,6 +127,7 @@ static int (*syscalls[])(void) = {
+ [SYS_link]    sys_link,
+ [SYS_mkdir]   sys_mkdir,
+ [SYS_close]   sys_close,
++[SYS_getreadcount] sys_getreadcount
+ };
+ 
+ void
+diff --git a/syscall.h b/syscall.h
+index bc5f356..c5ebb23 100644
+--- a/syscall.h
++++ b/syscall.h
+@@ -20,3 +20,4 @@
+ #define SYS_link   19
+ #define SYS_mkdir  20
+ #define SYS_close  21
++#define SYS_getreadcount 22
+diff --git a/sysfile.c b/sysfile.c
+index bfe61b7..227e4b2 100644
+--- a/sysfile.c
++++ b/sysfile.c
+@@ -66,6 +66,13 @@ sys_dup(void)
+   return fd;
+ }
+ 
++static uint readcount = 0;
++static struct spinlock readcount_lock;
++void
++init_readcount_lock(void) {
++  initlock(&readcount_lock, "readcount");
++}
++
+ int
+ sys_read(void)
+ {
+@@ -73,11 +80,20 @@ sys_read(void)
+   int n;
+   char *p;
+ 
++  acquire(&readcount_lock);
++  readcount++;
++  release(&readcount_lock);
++
+   if(argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+     return -1;
+   return fileread(f, p, n);
+ }
+ 
++int
++sys_getreadcount(void) {
++  return readcount;
++}
++
+ int
+ sys_write(void)
+ {
+diff --git a/test_readcount.c b/test_readcount.c
+new file mode 100644
+index 0000000..906e195
+--- /dev/null
++++ b/test_readcount.c
+@@ -0,0 +1,16 @@
++#include "fcntl.h"
++#include "types.h"
++#include "user.h"
++
++int main() {
++  int count = getreadcount();
++  printf(1, "Before calling read(): %d\n", count);
++  int fd = open("README", O_RDONLY);
++  char buf[69];
++  read(fd, buf, 4);
++  printf(1, "read: %s\n", buf);
++  count = getreadcount();
++  printf(1, "After calling read(): %d\n", count);
++  close(fd);
++  exit();
++}
+diff --git a/user.h b/user.h
+index 4f99c52..7886468 100644
+--- a/user.h
++++ b/user.h
+@@ -23,6 +23,7 @@ int getpid(void);
+ char* sbrk(int);
+ int sleep(int);
+ int uptime(void);
++int getreadcount(void);
+ 
+ // ulib.c
+ int stat(const char*, struct stat*);
+diff --git a/usys.S b/usys.S
+index 8bfd8a1..7af84de 100644
+--- a/usys.S
++++ b/usys.S
+@@ -29,3 +29,4 @@ SYSCALL(getpid)
+ SYSCALL(sbrk)
+ SYSCALL(sleep)
+ SYSCALL(uptime)
++SYSCALL(getreadcount)
