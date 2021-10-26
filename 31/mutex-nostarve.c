@@ -38,12 +38,13 @@ void ns_mutex_acquire(ns_mutex_t *m) {
     m->room2++;
     Sem_wait(m->mutex);
     m->room1--;
-    Sem_post(m->mutex);
 
     if (m->room1 == 0) {
+	Sem_post(m->mutex);
         Sem_post(m->t2);
     }
     else {
+	Sem_post(m->mutex);
         Sem_post(m->t1);
     }
 
