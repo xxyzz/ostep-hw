@@ -20,7 +20,11 @@ This homework lets you explore some real code that uses locks and condition vari
 
 3. If possible, run the code on different systems (e.g., a Mac and Linux). Do you see different behavior across these systems?
 
-    Linux switchs more often between producer and consumer.
+    ```
+    $ ./main-two-cvs-while -p 1 -c 3 -l 6 -v
+    ```
+
+    On Linux 5.14.4, most of the time a single consumer gets all the values but this happens occasionally on macOS 11.6.
 
 4. Let’s look at some timings. How long do you think the following execution, with one producer, three consumers, a single-entry shared buffer, and each consumer pausing at point `c3` for a second, will take? `./main-two-cvs-while -p 1 -c 3 -m 1 -C 0,0,0,1,0,0,0:0,0,0,1,0,0,0:0,0,0,1,0,0,0 -l 10 -v -t`
 
@@ -45,8 +49,8 @@ This homework lets you explore some real code that uses locks and condition vari
 9. Now change the number of consumers to two. Can you construct sleep strings for the producer and the consumers so as to cause a problem in the code?
 
     ```
-    // no sleep, like the situation in Figure 30.9 
-    $ ./main-one-cv-while -p 1 -c 2 -m 1 -v
+    // all threads sleeping, like the situation in Figure 30.11
+    $ ./main-one-cv-while -c 2 -v -P 0,0,0,0,0,0,1
     ```
 
 10. Now examine `main-two-cvs-if.c`. Can you cause a problem to happen in this code? Again consider the case where there is only one consumer, and then the case where there is more than one.
