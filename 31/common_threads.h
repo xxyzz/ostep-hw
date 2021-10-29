@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <fcntl.h> // For O_* constants
 #include <pthread.h>
-#include <sched.h>
 #include <semaphore.h>
 #include <sys/stat.h> // For mode constants
 
@@ -26,6 +25,10 @@
 #define Cond_signal(cond) assert(pthread_cond_signal(cond) == 0)
 #define Cond_wait(cond, mutex) assert(pthread_cond_wait(cond, mutex) == 0)
 
+#ifndef __APPLE__
+#define Sem_init(sem, pshared, value) assert(sem_init(sem, pshared, value) == 0)
+#define Sem_destroy(sem) assert(sem_destroy(sem) == 0)
+#endif
 #define Sem_wait(sem) assert(sem_wait(sem) == 0)
 #define Sem_post(sem) assert(sem_post(sem) == 0)
 #define Sem_close(sem) assert(sem_close(sem) == 0)
