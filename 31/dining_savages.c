@@ -3,6 +3,7 @@
 #include <stdlib.h> // exit, free, malloc
 #include <unistd.h> // getopt
 
+// Little Book of Semaphores: chapter 5.1
 sem_t *empty_pot, *full_pot, *mutex;
 int stewed_missionaries = 0, pot_size = 2;
 
