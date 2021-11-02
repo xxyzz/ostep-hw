@@ -34,11 +34,11 @@
 #define Sem_close(sem) assert(sem_close(sem) == 0)
 #define Sem_unlink(sem) assert(sem_unlink(sem) == 0)
 
-sem_t *Sem_open(char *sem, int value) {
-  sem_t *newSem;
-  newSem = sem_open(sem, O_CREAT, S_IRWXU, value);
-  assert(newSem != SEM_FAILED);
-  return newSem;
+sem_t *Sem_open(char *name, int value) {
+  sem_t *sem;
+  sem = sem_open(name, O_CREAT, S_IRWXU, value);
+  assert(sem != SEM_FAILED);
+  return sem;
 }
 
 #endif // __common_threads_h__
