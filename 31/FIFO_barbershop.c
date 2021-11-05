@@ -2,14 +2,22 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> // exit, free, malloc
+#include <sys/queue.h>
 #include <unistd.h> // getopt
 
-// Little Book of Semaphores: chapter 5.2
+// Little Book of Semaphores: chapter 5.3
 sem_t *mutex, *customer_arrives, *barber_wakes, *customer_leaves,
     *barber_sleeps;
 int chairs = 4, customers = 0;
+struct entry {
+  sem_t *customer_sem;
+  STAILQ_ENTRY(entry) entries;
+};
+STAILQ_HEAD(stailhead, entry);
+struct stailhead head;
 
 void init_sem() {
+  STAILQ_INIT(&head);
 #ifdef __APPLE__
   mutex = Sem_open("/mutex", 1);
   customer_arrives = Sem_open("/customer_arrives", 0);
@@ -57,9 +65,16 @@ void destroy_sem() {
 }
 
 void *barber(void *arg) {
+  struct entry *e;
   while (true) {
     Sem_wait(customer_arrives);
-    Sem_post(barber_wakes);
+    Sem_wait(mutex);
+    e = STAILQ_FIRST(&head);
+    STAILQ_REMOVE_HEAD(&head, entries);
+    Sem_post(mutex);
+
+    Sem_post(e->customer_sem);
+
     Sem_wait(customer_leaves);
     Sem_post(barber_sleeps);
   }
@@ -68,6 +83,7 @@ void *barber(void *arg) {
 
 void *customer(void *arg) {
   int index = *(int *)arg;
+  sem_t *customer_sem;
   Sem_wait(mutex);
   if (customers == chairs) {
     Sem_post(mutex);
@@ -75,11 +91,22 @@ void *customer(void *arg) {
     pthread_exit(NULL);
   }
   customers++;
+#ifdef __APPLE__
+  char name[BUFSIZ];
+  sprintf(name, "/customer_%d", index);
+  customer_sem = Sem_open(name, 0);
+#else
+  customer_sem = malloc(sizeof(sem_t));
+  Sem_init(customer_sem, 0, 0);
+#endif
+  struct entry *e = malloc(sizeof(struct entry));
+  e->customer_sem = customer_sem;
+  STAILQ_INSERT_TAIL(&head, e, entries);
   printf("Customer %d arrives.\n", index);
   Sem_post(mutex);
 
   Sem_post(customer_arrives);
-  Sem_wait(barber_wakes);
+  Sem_wait(customer_sem);
 
   printf("Customer %d gets haircut.\n", index);
 
@@ -88,6 +115,14 @@ void *customer(void *arg) {
 
   Sem_wait(mutex);
   customers--;
+#ifdef __APPLE__
+  Sem_close(e->customer_sem);
+  Sem_unlink(name);
+#else
+  Sem_destroy(e->customer_sem);
+  free(e->customer_sem);
+#endif
+  free(e);
   Sem_post(mutex);
   return NULL;
 }
@@ -121,7 +156,7 @@ int main(int argc, char *argv[]) {
   int stupid_arr[total_customers];
   init_sem();
 
-  Pthread_create(&barber_thread, NULL, barber, &total_customers);
+  Pthread_create(&barber_thread, NULL, barber, NULL);
   for (int i = 0; i < total_customers; i++) {
     stupid_arr[i] = i;
     Pthread_create(&customer_threads[i], NULL, customer, &stupid_arr[i]);
