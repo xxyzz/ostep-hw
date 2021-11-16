@@ -164,7 +164,7 @@ void *customer(void *arg) {
   Sem_post(sofaq_mutex);
 
   Sem_post(cust_arrive);
-  Sem_wait(e->cust_sem);  // get sofa
+  Sem_wait(e->cust_sem); // get sofa
   free_entry(e, name);
   printf("Customer %d sits on sofa.\n", index);
   Sem_wait(chairq_mutex);
@@ -173,7 +173,7 @@ void *customer(void *arg) {
   STAILQ_INSERT_TAIL(&wait_chairq_head, e, entries);
   Sem_post(chairq_mutex);
   Sem_post(cust_on_sofa);
-  Sem_wait(e->cust_sem);  // get chair
+  Sem_wait(e->cust_sem); // get chair
   free_entry(e, name);
   Sem_post(cust_leave_sofa);
 

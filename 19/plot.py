@@ -1,28 +1,43 @@
 #!/usr/bin/env python3
 
-import sys
+import argparse
+import platform
+import shutil
+import subprocess
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = np.loadtxt(sys.stdin)
-pages = len(data)
-a = np.arange(pages)
-x = 2**a
+parser = argparse.ArgumentParser()
+parser.add_argument('pages', type=int, help='input 4, 1 to 2^3 pages')
+parser.add_argument('trials')
+parser.add_argument('--single_cpu', action='store_true')
+args = parser.parse_args()
 
-plt.plot(a, data[:, 0], marker='o', color='orange')
-plt.plot(a, data[:, 1], marker='o')
-plt.plot(a, data[:, 2], marker='o')
+data = []
+x = np.arange(args.pages)
+pages = 2 ** x
+for i in pages:
+    if args.single_cpu and shutil.which('taskset'):
+        r = subprocess.run(
+            ['taskset', '-c', '0', './tlb.out', str(i), args.trials],
+            capture_output=True, check=True)
+    else:
+        r = subprocess.run(['./tlb.out', str(i), args.trials],
+                           capture_output=True, check=True)
+    data.append(float(r.stdout.decode()))
+
+plt.plot(x, data, marker='o', color='orange')
 plt.margins(0)
-plt.xticks(a, x, rotation=-20, fontsize='x-small')  # evenly spaced
+plt.xticks(x, pages, fontsize='x-small')  # evenly spaced
 plt.xlabel('Number Of Pages')
 plt.ylabel('Time Per Access (ns)')
-title = 'TLB Size Measurement(single CPU)'
-file_name = 'tlb_single.png'
-if len(sys.argv) > 1:
-    title = 'TLB Size Measurement(multiple CPU)'
-    file_name = 'tlb_multiple.png'
+title = 'TLB Size Measurement: '
+title += f'{platform.system()} {platform.release()} {platform.machine()}'
+if args.single_cpu:
+    title += ' single CPU'
 plt.title(title)
-plt.legend(['real', 'user', 'sys'])
-plt.savefig(file_name, dpi=227)
-plt.show()
+plt.savefig(
+    f'{platform.system()}{"_single.png" if args.single_cpu else ".png"}',
+    dpi=227)
+plt.show()  # pacman -S tk
