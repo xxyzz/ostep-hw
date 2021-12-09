@@ -18,14 +18,21 @@ data = []
 x = np.arange(args.pages)
 pages = 2 ** x
 for i in pages:
-    if args.single_cpu and shutil.which('taskset'):
-        r = subprocess.run(
-            ['taskset', '-c', '0', './tlb.out', str(i), args.trials],
-            capture_output=True, check=True)
+    if args.single_cpu:
+        if shutil.which('hwloc-bind'):
+            r = subprocess.run(
+                ['hwloc-bind', '--single', './tlb.out', str(i), args.trials],
+                capture_output=True, check=True, text=True)
+        elif shutil.which('taskset'):
+            r = subprocess.run(
+                ['taskset', '-c', '0', './tlb.out', str(i), args.trials],
+                capture_output=True, check=True, text=True)
+        else:
+            raise Exception("Can't find hwloc-bind or taskset")
     else:
         r = subprocess.run(['./tlb.out', str(i), args.trials],
-                           capture_output=True, check=True)
-    data.append(float(r.stdout.decode()))
+                           capture_output=True, check=True, text=True)
+    data.append(float(r.stdout))
 
 plt.plot(x, data, marker='o', color='orange')
 plt.margins(0)

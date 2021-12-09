@@ -19,6 +19,7 @@ In this homework, you’ll gain some experience with writing concurrent code and
     [Hyper-threading](https://en.wikipedia.org/wiki/Hyper-threading)
 
     ```
+    $ hwloc-ls
     // check CPU numbers
     $ nproc
     // Linux
