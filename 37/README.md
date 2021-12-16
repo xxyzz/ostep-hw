@@ -55,12 +55,14 @@ This homework uses `disk.py` to familiarize you with how a modern hard drive wor
     $ ./disk.py -a 10,11,12,13 -o 2 -c
     ```
 
-    skew = track-distance(40) / seek-speed / (rotational-space-degrees(360 / 12)  * rotation-speed)
-    = 40 / 1 / (30 * 1) ≈ 2
+    skew = (track-distance(40) / seek-speed) \* rotation-speed / rotational-space-degrees(360 / 12)
+    = `math.ceil((40 / 1) * 1 / 30)` = 2
 
-    `-S 2`: 40 / 2 / 30 ≈ 1
+    `-S 2`: `math.ceil((40 / 2) * 1 / 30)` = 1
 
-    `-S 4`: 40 / 4 / 30 ≈ 1
+    `-S 4`: `math.ceil((40 / 4) * 1 / 30)` = 1
+
+    `-R 2`: `math.ceil((40 / 1) * 2 / 30)` = 3
 
 7. Specify a disk with different density per zone, e.g., `-z 10,20,30`, which specifies the angular difference between blocks on the outer, middle, and inner tracks. Run some random requests (e.g., `-a -1 -A 5,-1,0`, which specifies that random requests should be used via the `-a -1` flag and that five requests ranging from 0 to the max be generated), and compute the seek, rotation, and transfer times. Use different random seeds. What is the bandwidth (in sectors per unit time) on the outer, middle, and inner tracks?
 
