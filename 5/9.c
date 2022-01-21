@@ -28,7 +28,7 @@ int main() {
       exit(EXIT_FAILURE);
     } else if (third_pid == 0) {
       sleep(1);
-      // this orphan process's new parent is init(pid 1)
+      // this orphan process's new parent is systemd/init(pid 1)
       // or the nearest "subreaper" defined by prctl(2)
       printf("third process's parent pid: %d\n", getppid());
     }
