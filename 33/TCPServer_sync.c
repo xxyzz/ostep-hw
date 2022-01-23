@@ -14,6 +14,7 @@
 
 // man epoll
 // The Linux programming interface, chapter 63.4.3
+// https://github.com/libevent/libevent
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     printf("Usage: %s numReqs", argv[0]);
@@ -28,13 +29,9 @@ int main(int argc, char *argv[]) {
   memset(&my_addr, 0, sizeof(my_addr));
   my_addr.sun_family = AF_UNIX;
   strncpy(my_addr.sun_path, SOCKET_NAME, sizeof(my_addr.sun_path) - 1);
-  if (bind(sfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1) {
-    if (errno == EADDRINUSE) {
-      close(sfd);
-      remove(SOCKET_NAME);
-    }
+  remove(SOCKET_NAME);
+  if (bind(sfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1)
     handle_error("bind");
-  }
   if (listen(sfd, LISTEN_BACKLOG) == -1)
     handle_error("listen");
 
@@ -67,7 +64,7 @@ int main(int argc, char *argv[]) {
           if (epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &ev) == -1)
             handle_error("epoll_ctl");
         } else {
-          char buff[BUFSIZ];
+          char buff[BUFSIZ] = "";
           if (recv(evlist[i].data.fd, buff, BUFSIZ, 0) == -1)
             handle_error("recv");
           int fd = open(buff, O_RDONLY);
