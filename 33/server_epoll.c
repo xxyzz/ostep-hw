@@ -1,16 +1,15 @@
 #include "connection.h"
+#include <arpa/inet.h> // htons, htonl
 #include <errno.h>
-#include <fcntl.h>  // open
-#include <stdio.h>  // remove
+#include <fcntl.h> // open
+#include <netinet/in.h> // sockaddr_in
+#include <stdio.h>
 #include <string.h> // memset
 #include <sys/epoll.h>
 #include <sys/sendfile.h>
-#include <sys/socket.h> // socket, bind, listen, accept, recv, AF_UNIX
+#include <sys/socket.h> // socket, bind, listen, accept, recv, AF_INET
 #include <sys/stat.h>
-#include <sys/un.h> // sockaddr_un
 #include <unistd.h> // close
-
-#define LISTEN_BACKLOG 80 // maxium length of the pending connections queue
 
 // man epoll
 // The Linux programming interface, chapter 63.4.3
@@ -22,14 +21,18 @@ int main(int argc, char *argv[]) {
   }
   int numReqs = atoi(argv[1]);
 
-  struct sockaddr_un my_addr;
-  int sfd = socket(AF_UNIX, SOCK_SEQPACKET, 0); // man 7 unix
+  struct sockaddr_in my_addr;
+  int sfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sfd == -1)
     handle_error("socket");
   memset(&my_addr, 0, sizeof(my_addr));
-  my_addr.sun_family = AF_UNIX;
-  strncpy(my_addr.sun_path, SOCKET_NAME, sizeof(my_addr.sun_path) - 1);
-  remove(SOCKET_NAME);
+  my_addr.sin_family = AF_INET;
+  my_addr.sin_port = htons(SOCKET_PORT);
+  my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  const int optval = 1;
+  if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval,
+                 sizeof(optval)))
+    handle_error("setsocketopt");
   if (bind(sfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1)
     handle_error("bind");
   if (listen(sfd, LISTEN_BACKLOG) == -1)
@@ -83,6 +86,5 @@ int main(int argc, char *argv[]) {
     }
   }
   close(sfd);
-  remove(SOCKET_NAME);
   return 0;
 }
