@@ -1,13 +1,8 @@
 #include "connection.h"
-#include <arpa/inet.h> // htons, htonl
 #include <errno.h>
 #include <fcntl.h> // open
-#include <netinet/in.h> // sockaddr_in
-#include <stdio.h>
-#include <string.h> // memset
 #include <sys/epoll.h>
 #include <sys/sendfile.h>
-#include <sys/socket.h> // socket, bind, listen, accept, recv, AF_INET
 #include <sys/stat.h>
 #include <unistd.h> // close
 
@@ -20,24 +15,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
   int numReqs = atoi(argv[1]);
-
-  struct sockaddr_in my_addr;
-  int sfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sfd == -1)
-    handle_error("socket");
-  memset(&my_addr, 0, sizeof(my_addr));
-  my_addr.sin_family = AF_INET;
-  my_addr.sin_port = htons(SOCKET_PORT);
-  my_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  const int optval = 1;
-  if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval,
-                 sizeof(optval)))
-    handle_error("setsocketopt");
-  if (bind(sfd, (struct sockaddr *)&my_addr, sizeof(my_addr)) == -1)
-    handle_error("bind");
-  if (listen(sfd, LISTEN_BACKLOG) == -1)
-    handle_error("listen");
-
+  int sfd = init_socket(1);
   int epfd = epoll_create1(0);
   if (epfd == -1)
     handle_error("epoll_create1");
