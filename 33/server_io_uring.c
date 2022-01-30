@@ -1,10 +1,12 @@
 #include "connection.h"
-#include <fcntl.h> // open
 #include <liburing.h>
+#include <stdio.h>
 #include <stdlib.h> // calloc, free
 #include <sys/stat.h>
+#include <time.h>   // clock_gettime
 #include <unistd.h> // close, pipe
 
+// man io_uring
 // https://kernel.dk/io_uring.pdf
 // https://github.com/axboe/liburing
 // https://github.com/torvalds/linux/blob/master/fs/io_uring.c
@@ -44,11 +46,12 @@ void prep_recv(struct io_uring *ring, int sfd, int cfd) {
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
   if (sqe == NULL)
     handle_error("io_uring_get_sqe");
-  struct user_data *data = calloc(1, sizeof(struct user_data));
+  struct user_data *data = malloc(sizeof(struct user_data));
   if (data == NULL)
-    handle_error("calloc");
+    handle_error("malloc");
   data->io_op = IORING_OP_RECV;
   data->socket_fd = cfd;
+  memset(data->buf, 0, BUFSIZ);
   io_uring_prep_recv(sqe, cfd, data->buf, BUFSIZ, 0);
   io_uring_sqe_set_data(sqe, data);
   if (numAccepts > 0)
@@ -65,8 +68,10 @@ void prep_first_splice(struct io_uring *ring, struct user_data *data) {
     handle_error("io_uring_get_sqe");
 
   int file_fd = open(data->buf, O_RDONLY);
-  if (file_fd == -1)
+  if (file_fd == -1) {
+    fprintf(stderr, "buf: %s\n", data->buf);
     handle_error("open");
+  }
   struct stat statbuf;
   if (fstat(file_fd, &statbuf) == -1)
     handle_error("fstat");
@@ -123,15 +128,18 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Usage: %s numReqs\n", argv[0]);
     exit(EXIT_FAILURE);
   }
+  struct timespec start, end;
+  if (clock_gettime(CLOCK_MONOTONIC, &start) == -1)
+    handle_error("clock_gettime");
   numReqs = atoi(argv[1]);
   if (numReqs <= 0) {
     fprintf(stderr, "Get out\n");
     exit(EXIT_FAILURE);
   }
   numAccepts = numReqs;
-  int sfd = init_socket(1);
+  int sfd = init_socket(1, 0);
   struct io_uring ring;
-  if (io_uring_queue_init(LISTEN_BACKLOG, &ring, 0))
+  if (io_uring_queue_init(LISTEN_BACKLOG, &ring, IORING_SETUP_SQPOLL))
     handle_error("io_uring_queue_init");
   prep_accept(&ring, sfd);
 
@@ -167,5 +175,10 @@ int main(int argc, char *argv[]) {
   }
   io_uring_queue_exit(&ring);
   close(sfd);
+  if (clock_gettime(CLOCK_MONOTONIC, &end) == -1)
+    handle_error("clock_gettime");
+  // nanoseconds
+  printf("%f\n",
+         ((end.tv_sec - start.tv_sec) * 1E9 + end.tv_nsec - start.tv_nsec));
   return 0;
 }

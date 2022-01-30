@@ -1,21 +1,24 @@
 #include "connection.h"
 #include <errno.h>
-#include <fcntl.h> // open
 #include <sys/epoll.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <time.h>   // clock_gettime
 #include <unistd.h> // close
 
 // man epoll
 // The Linux programming interface, chapter 63.4.3
-// https://github.com/libevent/libevent
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     printf("Usage: %s numReqs", argv[0]);
     exit(EXIT_FAILURE);
   }
+  struct timespec start, end;
+  if (clock_gettime(CLOCK_MONOTONIC, &start) == -1)
+    handle_error("clock_gettime");
+
   int numReqs = atoi(argv[1]);
-  int sfd = init_socket(1);
+  int sfd = init_socket(1, 0);
   int epfd = epoll_create1(0);
   if (epfd == -1)
     handle_error("epoll_create1");
@@ -64,5 +67,10 @@ int main(int argc, char *argv[]) {
     }
   }
   close(sfd);
+  if (clock_gettime(CLOCK_MONOTONIC, &end) == -1)
+    handle_error("clock_gettime");
+  // nanoseconds
+  printf("%f\n",
+         ((end.tv_sec - start.tv_sec) * 1E9 + end.tv_nsec - start.tv_nsec));
   return 0;
 }
