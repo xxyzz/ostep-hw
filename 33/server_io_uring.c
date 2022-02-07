@@ -1,10 +1,8 @@
 #include "connection.h"
 #include <liburing.h>
 #include <stdio.h>
-#include <stdlib.h> // calloc, free
-#include <sys/stat.h>
 #include <time.h>   // clock_gettime
-#include <unistd.h> // close, pipe
+#include <unistd.h> // close
 
 // man io_uring
 // https://kernel.dk/io_uring.pdf
@@ -15,12 +13,13 @@
 
 struct user_data {
   char buf[BUFSIZ];
-  int pipefd[2];
-  off_t size;
-  int io_op;
   int socket_fd;
   int file_fd;
+  int index;
+  int io_op;
 };
+
+struct user_data data_arr[LISTEN_BACKLOG];
 
 int numAccepts = 0, numReqs = 0;
 
@@ -28,99 +27,64 @@ void prep_accept(struct io_uring *ring, int sfd) {
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
   if (sqe == NULL)
     handle_error("io_uring_get_sqe");
-  struct user_data *data = malloc(sizeof(struct user_data));
-  if (data == NULL)
-    handle_error("malloc");
-  data->io_op = IORING_OP_ACCEPT;
+
   io_uring_prep_accept(sqe, sfd, NULL, NULL, 0);
   // https://github.com/axboe/liburing/commit/8ecd3fd959634df81d66af8b3a69c16202a014e8
-  io_uring_sqe_set_data(sqe, data);
-  if (io_uring_submit(ring) < 0) {
-    free(data);
+  data_arr[--numAccepts].io_op = IORING_OP_ACCEPT;
+  data_arr[numAccepts].index = numAccepts;
+  io_uring_sqe_set_data(sqe, &data_arr[numAccepts]);
+  if (io_uring_submit(ring) < 0)
     handle_error("io_uring_submit");
-  }
-  numAccepts--;
 }
 
-void prep_recv(struct io_uring *ring, int sfd, int cfd) {
+void prep_recv(struct io_uring *ring, int sfd, int cfd, int index) {
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
   if (sqe == NULL)
     handle_error("io_uring_get_sqe");
-  struct user_data *data = malloc(sizeof(struct user_data));
-  if (data == NULL)
-    handle_error("malloc");
-  data->io_op = IORING_OP_RECV;
-  data->socket_fd = cfd;
-  memset(data->buf, 0, BUFSIZ);
-  io_uring_prep_recv(sqe, cfd, data->buf, BUFSIZ, 0);
-  io_uring_sqe_set_data(sqe, data);
+
+  data_arr[index].io_op = IORING_OP_RECV;
+  data_arr[index].socket_fd = cfd;
+  memset(data_arr[index].buf, 0, BUFSIZ);
+  io_uring_prep_recv(sqe, cfd, data_arr[index].buf, BUFSIZ, 0);
+  io_uring_sqe_set_data(sqe, &data_arr[index]);
   if (numAccepts > 0)
     prep_accept(ring, sfd);
-  else if (io_uring_submit(ring) < 0) {
-    free(data);
+  else if (io_uring_submit(ring) < 0)
     handle_error("io_uring_submit");
-  }
 }
 
-void prep_first_splice(struct io_uring *ring, struct user_data *data) {
+void prep_read(struct io_uring *ring, int index) {
   struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
   if (sqe == NULL)
     handle_error("io_uring_get_sqe");
 
-  int file_fd = open(data->buf, O_RDONLY);
+  int file_fd = open(data_arr[index].buf, O_RDONLY);
   if (file_fd == -1) {
-    fprintf(stderr, "buf: %s\n", data->buf);
+    fprintf(stderr, "buf: %s\n", data_arr[index].buf);
     handle_error("open");
   }
-  struct stat statbuf;
-  if (fstat(file_fd, &statbuf) == -1)
-    handle_error("fstat");
-  int pipefd[2];
-  if (pipe(pipefd) == -1)
-    handle_error("pipe");
 
-  struct user_data *new_data = malloc(sizeof(struct user_data));
-  if (new_data == NULL)
-    handle_error("malloc");
-  new_data->io_op = IORING_OP_SPLICE;
-  new_data->socket_fd = data->socket_fd;
-  new_data->file_fd = file_fd;
-  new_data->size = statbuf.st_size;
-  memcpy(new_data->pipefd, pipefd, sizeof(pipefd));
-  // https://github.com/axboe/liburing/blob/29ff69397fa13478b5619201347c51159874279e/src/include/liburing.h#L289-L307
-  io_uring_prep_splice(sqe, file_fd, -1, pipefd[1], -1, statbuf.st_size, 0);
-  io_uring_sqe_set_data(sqe, new_data);
-  if (io_uring_submit(ring) < 0) {
-    free(new_data);
+  data_arr[index].io_op = IORING_OP_READ;
+  data_arr[index].file_fd = file_fd;
+  memset(data_arr[index].buf, 0, BUFSIZ);
+  io_uring_prep_read(sqe, file_fd, data_arr[index].buf, BUFSIZ, 0);
+  io_uring_sqe_set_data(sqe, &data_arr[index]);
+  if (io_uring_submit(ring) < 0)
     handle_error("io_uring_submit");
-  }
 }
 
-void prep_second_splice(struct io_uring *ring, struct user_data *data) {
-  if (data->size != -1) {
-    struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
-    if (sqe == NULL)
-      handle_error("io_uring_get_sqe");
+void prep_send(struct io_uring *ring, int index) {
+  struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+  if (sqe == NULL)
+    handle_error("io_uring_get_sqe");
 
-    close(data->file_fd);
-    close(data->pipefd[1]);
-    struct user_data *new_data = malloc(sizeof(struct user_data));
-    if (new_data == NULL)
-      handle_error("malloc");
-    memcpy(new_data, data, sizeof(struct user_data));
-    new_data->size = -1;
-    io_uring_prep_splice(sqe, data->pipefd[0], -1, data->socket_fd, -1,
-                         data->size, 0);
-    io_uring_sqe_set_data(sqe, new_data);
-    if (io_uring_submit(ring) < 0) {
-      free(new_data);
-      handle_error("io_uring_submit");
-    }
-  } else {
-    close(data->pipefd[0]);
-    close(data->socket_fd);
-    numReqs--;
-  }
+  close(data_arr[index].file_fd);
+  data_arr[index].io_op = IORING_OP_SEND;
+  io_uring_prep_send(sqe, data_arr[index].socket_fd, data_arr[index].buf,
+                     BUFSIZ, 0);
+  io_uring_sqe_set_data(sqe, &data_arr[index]);
+  if (io_uring_submit(ring) < 0)
+    handle_error("io_uring_submit");
 }
 
 int main(int argc, char *argv[]) {
@@ -152,25 +116,23 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
     struct user_data *data = io_uring_cqe_get_data(cqe);
-    if (data == NULL) {
-      fprintf(stderr, "cqe->user_data is NULL\n");
-      exit(EXIT_FAILURE);
-    }
-
     switch (data->io_op) {
     case IORING_OP_ACCEPT:
-      prep_recv(&ring, sfd, cqe->res);
+      prep_recv(&ring, sfd, cqe->res, data->index);
       break;
     case IORING_OP_RECV:
-      prep_first_splice(&ring, data);
+      prep_read(&ring, data->index);
       break;
-    case IORING_OP_SPLICE:
-      prep_second_splice(&ring, data);
+    case IORING_OP_READ:
+      prep_send(&ring, data->index);
+      break;
+    case IORING_OP_SEND:
+      close(data_arr[data->index].socket_fd);
+      numReqs--;
       break;
     default:
       handle_error("Unknown I/O");
     }
-    free(data);
     io_uring_cqe_seen(&ring, cqe);
   }
   io_uring_queue_exit(&ring);
