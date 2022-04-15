@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // for execvpe()
 #if __has_include(<features.h>)
-#include <features.h>
+#  include <features.h> // __GNU_LIBRARY__
 #endif
 #include <fcntl.h>  // open
 #include <stdio.h>  // perror
