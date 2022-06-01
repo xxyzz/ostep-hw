@@ -34,7 +34,7 @@
 
 6. Another thing to watch out for is the fact that most systems today ship with multiple CPUs, and each CPU, of course, has its own TLB hierarchy. To really get good measurements, you have to run your code on just one CPU, instead of letting the scheduler bounce it from one CPU to the next. How can you do that? (hint: look up “pinning a thread” on Google for some clues) What will happen if you don’t do this, and the code moves from one CPU to the other?
 
-    Use `pthread_setaffinity(3)` or `taskset(1)` on Linux, `cpuset_setaffinity(2)` or `cpuset(1)` on FreeBSD.
+    Use `sched_setaffinity(2)`, `pthread_setaffinity_np(3)`, `taskset(1)` or `sudo systemd-run -p AllowedCPUs=0` on Linux, `cpuset_setaffinity(2)` or `cpuset(1)` on FreeBSD.
 
     Or use `hwloc-bind --single`.
 
