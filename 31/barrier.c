@@ -14,7 +14,6 @@ typedef struct __barrier_t {
     // add semaphores and other information here
     sem_t * modCounter;
     sem_t * allArried;
-    int num_arried;
     int num_threads;
 } barrier_t;
 
@@ -27,18 +26,17 @@ void barrier_init(barrier_t *b, int num_threads) {
     // initialization code goes here
     b->modCounter = Sem_open(modCounter, 1);
     b->allArried = Sem_open(allArried, 0);
-    b->num_arried = 0;
     b->num_threads = num_threads;
 }
 
 void barrier(barrier_t *b) {
     // barrier code goes here
     Sem_wait(b->modCounter);
-    b->num_arried++;
-    if (b->num_arried == b->num_threads) {
+    b->num_threads--;
+    Sem_post(b->modCounter);
+    if (b->num_threads == 0) {
         Sem_post(b->allArried);
     }
-    Sem_post(b->modCounter);
     Sem_wait(b->allArried);
     Sem_post(b->allArried);
 }
