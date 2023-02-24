@@ -57,6 +57,12 @@ This program, `scheduler.py`, allows you to see how different schedulers perform
 
 7. What happens to response time with RR as quantum lengths increase? Can you write an equation that gives the worst-case response time, given N jobs?
 
-    Response time will increase.\
-    The nth job's response time = (n - 1) * q\
-    Average response time = (n - 1) * q / 2
+	1 <= n <= N, q = quantum time, jt = job run time
+
+	Response time will increase when q < jt:\
+	The nth job's response time = (n - 1) * q\
+	Average response time = (N - 1) * q / 2
+
+	When q >= jt:\
+	The nth job's response time = (n - 1) * jt\
+	Average response time = (N - 1) * jt / 2
