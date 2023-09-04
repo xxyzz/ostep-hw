@@ -122,6 +122,8 @@ static void put(btree_t *btree, char *key, char *val) {
 
   // need to split root
   node_t *t = initNode(2);
+  free(t->children[0]);
+  free(t->children[1]);
   t->children[0] = initEntry(btree->root->children[0]->key, NULL, btree->root);
   t->children[1] = initEntry(u->children[0]->key, NULL, u);
   btree->root = t;
@@ -145,8 +147,11 @@ static node_t *insert(node_t *h, char *key, char *val, int ht) {
     for (j = 0; j < h->m; j++) {
       if ((j + 1 == h->m) || strcmp(key, h->children[j + 1]->key) < 0) {
         node_t *u = insert(h->children[j++]->next, key, val, ht - 1);
-        if (u == NULL)
+        if (u == NULL){
+          // important to add this and then avoid subsequent chained mem leaks.
+          free(t);
           return NULL;
+        }
         t->key = u->children[0]->key;
         t->next = u;
         break;
@@ -154,6 +159,8 @@ static node_t *insert(node_t *h, char *key, char *val, int ht) {
     }
   }
 
+  // this also will cause chained mem leaks.
+  free(h->children[h->m]);
   for (int i = h->m; i > j; i--)
     h->children[i] = h->children[i - 1];
   h->children[j] = t;
@@ -168,8 +175,12 @@ static node_t *insert(node_t *h, char *key, char *val, int ht) {
 static node_t *split(node_t *h) {
   node_t *t = initNode(M / 2);
   h->m = M / 2;
-  for (int j = 0; j < M / 2; j++)
+  for (int j = 0; j < M / 2; j++){
+    free(t->children[j]);
     t->children[j] = h->children[M / 2 + j];
+    // avoid double free.
+    h->children[M / 2 + j]=NULL;
+  }
   return t;
 }
 
@@ -179,7 +190,11 @@ static char *toString(btree_t *btree) {
 }
 
 static char *toStringHelper(node_t *h, int ht, char *indent) {
-  char *s = malloc(1024 * sizeof(char));
+  // avoid weird characters and subsequent weird behavior when free by explicit initialization.
+  char *s = calloc(1024 * sizeof(char),1024);
+  if (!s) {
+    handle_error_en(errno, "calloc s");
+  }
   entry_t *children[M];
   for (size_t i = 0; i < M; i++) {
     children[i] = h->children[i];
@@ -199,16 +214,17 @@ static char *toStringHelper(node_t *h, int ht, char *indent) {
     }
   } else {
     for (int j = 0; j < h->m; j++) {
-      if (j > 0) {
-        strcat(s, indent);
-        strcat(s, "(");
-        strcat(s, children[j]->key);
-        strcat(s, ")\n");
-      }
+      strcat(s, indent);
+      strcat(s, "(");
+      strcat(s, children[j]->key);
+      strcat(s, ")\n");
       char *intentCp = malloc(1024 * sizeof(char));
       strcpy(intentCp, indent);
       strcat(intentCp, "     ");
-      strcat(s, toStringHelper(children[j]->next, ht - 1, intentCp));
+      char * subtree_str = toStringHelper(children[j]->next, ht - 1, intentCp);
+      strcat(s, subtree_str);
+      free(intentCp);
+      free(subtree_str);
     }
   }
   return s;
@@ -225,6 +241,22 @@ static void *thread_function(void *args) {
     put(m->btree, urls[i % 11], "128.112.136.12");
   Pthread_mutex_unlock(&m->btree->lock);
   pthread_exit(EXIT_SUCCESS);
+}
+
+void free_node (node_t* subnode){
+  // recommend use `i<M` to free all `initEntry` allocated memory.
+  for (int i=0; i<M; i++) {
+    if (subnode->children[i]==NULL) {
+      continue;
+    }
+    node_t* target_node = subnode->children[i]->next;
+    if (target_node!=NULL) {
+      free_node(target_node);
+    }
+    free(subnode->children[i]);
+  }
+  free(subnode);
+  return;
 }
 
 // Unit tests the BTree data type.
@@ -256,6 +288,11 @@ int main(int argc, char *argv[]) {
     printf("Time (seconds): %f\n\n",
            ((double)(endusec - startusec) / ONE_MILLION));
     printf("size: %d\n\n", btree->n);
+    char *btree_structure = toString(btree);
+    printf("%s\n", btree_structure);
+    free(btree_structure);
+    free_node(btree->root);
+    free(btree);
     free(threads);
   }
 
@@ -287,6 +324,5 @@ int main(int argc, char *argv[]) {
 
   // printf("size:      %d\n", btree->n);
   // printf("height:    %d\n", btree->height);
-  // printf("%s\n", toString(btree));
   return 0;
 }
