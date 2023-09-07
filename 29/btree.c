@@ -191,7 +191,7 @@ static char *toString(btree_t *btree) {
 
 static char *toStringHelper(node_t *h, int ht, char *indent) {
   // avoid weird characters and subsequent weird behavior when free by explicit initialization.
-  char *s = calloc(1024 * sizeof(char),1024);
+  char *s = calloc(1024,sizeof(char));
   if (!s) {
     handle_error_en(errno, "calloc s");
   }
