@@ -6,6 +6,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h> // For mode constants
+#include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define Pthread_create(thread, attr, start_routine, arg)                       \
   assert(pthread_create(thread, attr, start_routine, arg) == 0)
@@ -35,10 +38,23 @@
 #define Sem_close(sem) assert(sem_close(sem) == 0)
 #define Sem_unlink(sem) assert(sem_unlink(sem) == 0)
 
+/*
+If some programs created sem by sem_open but not destroyed it maybe due to the deadlock and Ctrl-C or others,
+then with "O_CREAT" flag, the next time "Sem_open" will skip the create operation and not init as expected.
+*/
+
 sem_t *Sem_open(char *name, int value) {
   sem_t *sem;
-  sem = sem_open(name, O_CREAT, S_IRWXU, value);
-  assert(sem != SEM_FAILED);
+  sem = sem_open(name, O_CREAT|O_EXCL, S_IRWXU, value);
+  if (sem == SEM_FAILED){
+    if (errno==EEXIST){
+      Sem_unlink(name);
+      sem = Sem_open(name, value);
+    }else{
+      fprintf(stderr,"sem_open error");
+      exit(-1);
+    }
+  }
   return sem;
 }
 
