@@ -62,6 +62,8 @@ run the program `/bin/ls`. See if you can try all of the variants of `exec()`, i
     - Returns -1.
 
 6. Write a slight modification of the previous program,this time using `waitpid()` instead of wait(). When would `waitpid()` be useful?
+    - If Parent process is waiting for Any / Specific child Process to terminate.
+    - If you might want to know if a child process terminated normally or was killed by a signal.
 
 7. Write a program that creates a child process, and then in the child closes standard output (`STDOUT_FILENO`). What happens if the child calls `printf()` to print some output after closing the descriptor?
 
