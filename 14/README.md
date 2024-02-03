@@ -68,11 +68,13 @@ In this homework, you will gain some familiarity with memory allocation. First, 
 
     ```
     ==26677== Invalid write of size 4
-    ==26677==    at 0x1049C: main (size_100.c:6)
-    ==26677==  Address 0x49c61b8 is 248 bytes inside an unallocated block of size 4,194,088 in arena "client"
+    ==26677==    at 0x1086B1: main (size_100.c:6)
+    ==26677==  Address 0x52381d0 is 0 bytes after a block of size 400 alloc'd
+    ==26677==    at 0x4C330C5: malloc (vg_replace_malloc.c:442)
+    ==26677==    by 0x1086A2: main (size_100.c:5)
     ```
 
-    `sizeof(int)` is 4 here, so the length of `data` should be 25 instead of 100.
+    No. `data[100] = 0;` attempts to store the value 0 in the 101st element of the array. However, since the array was allocated for only 100 integers (indices 0 to 99). Accessing the 101st element lead to memory corruption.
 
 6. Create a program that allocates an array of integers (as above), frees them, and then tries to print the value of one of the elements of the array. Does the program run? What happens when you use `valgrind` on it?
 
